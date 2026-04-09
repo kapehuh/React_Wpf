@@ -27,7 +27,7 @@ const TrackCE = ({ onTrackingChange, initialChecked = true }) => {
           type="checkbox"
           checked={isTracking}
           onChange={handleToggle}
-          className="w-6 h-4 accent-gray-500 bg-gray"
+          className="w-4 h-4 accent-gray-500 bg-gray"
         />
         <span className="text-gray-700">Track CE</span>
       </label>

@@ -80,7 +80,7 @@ const LabelInputButton = ({
   };
 
   return (
-    <div className="flex items-center gap-3 mb-0 relative">
+    <div className="flex items-center gap-3 mb-0">
       <label className={"w-20 font-semibold text-gray-700"}>{label}:</label>
       <input
         type="text"
@@ -89,22 +89,24 @@ const LabelInputButton = ({
         readOnly={readOnly}
         className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
       />
-      <button
-        onClick={handleButtonClick}
-        className={`px-4 py-2 rounded text-sm flex items-center gap-1 ${
-          actionType === 'copy' 
-            ? 'bg-blue-500 hover:bg-blue-600' 
-            : 'bg-blue-500 hover:bg-blue-600'
-        } text-white ${buttonClassName}`}
-      >
-        {buttonIcon && <span className="w-5 h-5 flex-shrink-0">{buttonIcon}</span>}
-        <span>{buttonLabel}</span>
-      </button>
-      {showTooltip && (
-          <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-20">
+      <span className="relative">
+        <button
+          onClick={handleButtonClick}
+          className={`px-4 py-2 rounded text-sm flex items-center gap-1 ${
+            actionType === 'copy' 
+              ? 'bg-blue-500 hover:bg-blue-600' 
+              : 'bg-blue-500 hover:bg-blue-600'
+          } text-white ${buttonClassName}`}>
+          {buttonIcon && <span className="w-5 h-5 flex-shrink-0">{buttonIcon}</span>}
+          <span>{buttonLabel}</span>
+        </button>
+        {showTooltip && (
+          // <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-20">
+          <div className="absolute top-0 right-full mr-2 bg-gray-500 text-white text-xs px-2 py-2 rounded whitespace-nowrap z-20">
             Скопировано!
           </div>
         )}
+      </span>
     </div>
   );
 };

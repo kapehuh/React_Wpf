@@ -12,7 +12,7 @@ const LabelValue = ({ label, value }) => {
   return (
     <div className="flex items-center gap-3 h-6">
       {/* Фиксированная ширина метки */}
-      <label className="w-20 font-semibold text-gray-700 rounded rounded bg-gray-50">{label}</label>
+      <label className="w-20 font-semibold text-gray-700 rounded bg-gray-50">{label}</label>
       <span className="text-blue-700">{value ?? '—'}</span>
     </div>
   );

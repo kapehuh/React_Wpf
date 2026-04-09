@@ -1,5 +1,5 @@
 export const sendToWPF = (action, payload = {}) => {
-  const message = JSON.stringify({ action, ...payload });
+  const message = JSON.stringify({ action, payload });
 
   // 1: через postMessage (работает в WebView2)
   // if (window.chrome?.webview) {
