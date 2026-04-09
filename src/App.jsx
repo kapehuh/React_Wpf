@@ -8,16 +8,13 @@ import CopyIcon from './components/CopyIcon';
 
 
 function App() {
-  // const [currentElement, setCurrentElement] = useState('(не выбран)');
   const [currentElement, setCurrentElement] = useState(null);
   const [trackingEnabled, setTrackingEnabled] = useState(true); //синхронизация с чекбоксом
-  //if (!currentElement) return <div>Загрузка...</div>;
 
 
   // ✅ запросить текущий элемент при старте
   useEffect(() => {
     if (window.chrome?.webview) {
-      //sendToWPF('getCurrentElement');
       // при старте отправляем статус чекбокса, если он true wpf вернет CurrentElement
       sendToWPF('trackCe', { enabled: true });
     }
@@ -30,7 +27,7 @@ function App() {
     if (window.chrome?.webview) sendToWPF('trackCe', { enabled: isEnabled });
   }, []);
 
-  
+
   // Подписка на сообщения из WPF (через postMessage)
   useEffect(() => {
     const handleMessageFromWPF = (event) => {
@@ -58,14 +55,12 @@ function App() {
   const handleFieldSave = (fieldKey, newValue) => {
     console.log(`[Заглушка] Сохранить ${fieldKey} = ${newValue}`);
     // Здесь позже будет sendToWPF('updateElementField', { field: fieldKey, value: newValue });
-    //alert(`Сохранение поля ${fieldKey} (заглушка)`);
   };
 
 
   // Обработчик для копирования (без сохранения)
   const handleRefCopy = (fieldKey, value) => {
     console.log('Просто копируем RefNo в буфер');
-    //alert(`Копируем ${fieldKey} (заглушка)`);
   };
 
 
