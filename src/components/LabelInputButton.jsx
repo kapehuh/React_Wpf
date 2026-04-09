@@ -71,7 +71,7 @@ const LabelInputButton = ({
   };
 
   const handleButtonClick = () => {
-    if (actionType === 'copy' && onAction) {
+    if (actionType === 'copy') {
       handleCopyToClipboard();
       onAction(fieldKey, inputValue);
     } else if (actionType === 'save' && onAction) {
@@ -101,7 +101,7 @@ const LabelInputButton = ({
         <span>{buttonLabel}</span>
       </button>
       {showTooltip && (
-          <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
+          <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-20">
             Скопировано!
           </div>
         )}

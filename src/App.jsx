@@ -90,13 +90,13 @@ function App() {
           buttonClassName="w-8 h-8 p-0 justify-center"
           />
         </div>
-        <div className="w-100 mt-1 p-3 border border-gray-300 rounded bg-gray-50">
+        <div className="w-full mt-1 p-3 border border-gray-300 rounded bg-gray-50">
           <LabelValue label="Site" value={currentElement?.Site ?? '-'} ></LabelValue>
         </div>
-        <div className="w-100 mt-1 p-3 border border-gray-300 rounded bg-gray-50">
+        <div className="w-full mt-1 p-3 border border-gray-300 rounded bg-gray-50">
           <LabelValue label="Zone" value={currentElement?.Zone ?? '—'} ></LabelValue>
         </div>
-        <div className="w-100 mt-1 p-3 border border-gray-300 rounded bg-gray-50">
+        <div className="w-full mt-1 p-3 border border-gray-300 rounded bg-gray-50">
           <LabelValue label=":SZone" value={currentElement?.sZone ?? '—'} ></LabelValue>
         </div>
       </div>
