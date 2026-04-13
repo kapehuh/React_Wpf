@@ -1,5 +1,7 @@
 // src/components/LabelInputButton.jsx
 import React, { useState, useEffect } from 'react';
+import { useCopyToClipboard } from '../hooks/UseCopyToClipboard';
+
 
 /**
  * Компонент для редактируемого поля: метка + input + кнопка "Сохранить".
@@ -11,83 +13,52 @@ import React, { useState, useEffect } from 'react';
  * @param {function} onSave - Колбэк при нажатии кнопки (получает fieldKey и новое значение)
  */
 const LabelInputButton = ({ 
-    label, 
-    fieldKey, 
-    currentElement, 
-    onAction, 
+    label,
+    value,                // текущее значение (из editedElement)
+    onChange,             // вызывается при каждом изменении инпута
+    onSave,               // вызывается при клике на кнопку сохранения
     buttonLabel = "Сохранить", 
-    readOnly = false, 
+    readOnly = false,     // если true – инпут только для чтения, кнопка копирования
     actionType = "save", 
     buttonIcon,
-    buttonClassName = ""
+    buttonClassName = "",  // true → подсветка жёлтым (поле изменено, но не сохранено)
+    isChanged = false,    // true → подсветка жёлтым (поле изменено, но не сохранено)
    }) => {
-  // Локальное состояние для значения инпута (чтобы редактировать без изменения глобального объекта)
-  const [inputValue, setInputValue] = useState('');
-  const [showTooltip, setShowTooltip] = useState(false);
-  useEffect(() => {
-    if (showTooltip) {
-      const timer = setTimeout(() => setShowTooltip(false), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [showTooltip]);
 
-  // При обновлении currentElement (новые данные из WPF) синхронизируем локальное значение
-  useEffect(() => {
-    if (currentElement && currentElement[fieldKey] !== undefined) {
-      setInputValue(currentElement[fieldKey] ?? '');
-    }
-  }, [currentElement, fieldKey]);
-
-  // copy
-  const handleCopyToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(inputValue);
-      setShowTooltip(true);
-      //console.log('Скопировано в буфер обмена:', inputValue);
-      //alert(`Скопировано: "${inputValue}"`);
-    } catch (err) {
-      console.error('Ошибка при копировании:', err);
-      fallbackCopyToClipboard(inputValue);
-    }
-  };
-
-  const fallbackCopyToClipboard = (text) => {
-    const textArea = document.createElement('textarea');
-    textArea.value = text;
-    textArea.style.position = 'fixed';
-    textArea.style.left = '-999999px';
-    textArea.style.top = '-999999px';
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    try {
-      document.execCommand('copy');
-      console.log('Скопировано (fallback):', text);
-    } catch (err) {
-      console.error('Не удалось скопировать (fallback):', err);
-    }
-
-    document.body.removeChild(textArea);
-  };
-
+  // Используем хук для копирования
+  const { copy, showTooltip } = useCopyToClipboard();
+  
+  // Обработчик кнопки
   const handleButtonClick = () => {
     if (actionType === 'copy') {
-      handleCopyToClipboard();
-      onAction(fieldKey, inputValue);
-    } else if (actionType === 'save' && onAction) {
-      onAction(fieldKey, inputValue);
+      handleCopy();
+    } else if (actionType === 'save') {
+      handleSave();
     }
   };
+  
+  // Обработчик копирования – просто вызываем хук
+  const handleCopy = () => {
+    copy(value);
+  };
+  
+  // Обработчик сохранения 
+  const handleSave = () => {
+    if (onSave) onSave(value);
+  };
+
+  
 
   return (
     <div className="flex items-center gap-3 mb-0">
       <label className={"w-20 font-semibold text-gray-700"}>{label}:</label>
+      
       <input
         type="text"
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
+        value={value ?? ''}
+        onChange={(e) => onChange && onChange(e.target.value)}
         readOnly={readOnly}
-        className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+        className={`flex-1 border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${isChanged ? 'border-yellow-500 bg-yellow-50' : 'border-gray-300'}`}
       />
       <span className="relative">
         <button
@@ -101,7 +72,6 @@ const LabelInputButton = ({
           <span>{buttonLabel}</span>
         </button>
         {showTooltip && (
-          // <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-20">
           <div className="absolute top-0 right-full mr-2 bg-gray-500 text-white text-xs px-2 py-2 rounded whitespace-nowrap z-20">
             Скопировано!
           </div>

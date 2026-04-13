@@ -1,3 +1,4 @@
+// components/TrackCE.jsx
 import React, { useState, useEffect } from 'react';
 /**
  * Компонент "V Track CE" – чекбокс с надписью.

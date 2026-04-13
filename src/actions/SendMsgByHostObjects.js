@@ -1,3 +1,4 @@
+// actions/SendMsgByHostObjects.js
 export const sendToWPF = (action, payload = {}) => {
   const message = JSON.stringify({ action, payload });
 
@@ -8,19 +9,19 @@ export const sendToWPF = (action, payload = {}) => {
   //   return;
   // }
 
-  // JSON: {"action":"trackCe","enabled":false}
-  // 2: через hostObjects.bridge (в WPF объект bridge)
-  if (window.chrome?.webview?.hostObjects?.bridge) {
-    window.chrome.webview.hostObjects.bridge.SendToCSharp(message);
+  // 2: через hostObjects.bridge
+  if (window.chrome?.webview?.hostObjects?.SendMsgByHostObjects) {
+    window.chrome.webview.hostObjects.SendMsgByHostObjects.SendToCSharp(message);
     console.log('[Bridge] Sent via hostObjects.bridge:', message);
     return;
   }
   console.warn('[Bridge] WebView2 not available, running in dev mode');
 };
 
+
+
+
 // ПРИМЕР:
-// const SaveButton = () => {
-//   const handleSave = () => {
 //     const formData = {
 //       name: 'Балка 1',
 //       refNo: 'B-123',
@@ -28,5 +29,3 @@ export const sendToWPF = (action, payload = {}) => {
 //       width: 120
 //     };
 //     sendToWPF('saveData', formData);
-//   };
-//   return <button onClick={handleSave}>Сохранить</button>;

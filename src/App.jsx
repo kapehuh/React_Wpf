@@ -1,34 +1,42 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { ElementContext } from './contexts/ElementContext';
 import TrackCE from './components/TrackCE';
+import CopyIcon from './components/CopyIcon';
 import LabelValue from './components/LabelValue';
 import LabelInputButton from './components/LabelInputButton';
-import { sendToWPF } from './bridge';
-import CopyIcon from './components/CopyIcon';
+import { sendToWPF } from './actions/SendMsgByHostObjects';
+
 
 
 function App() {
+  //debugger;
+  // Оригинал из WPF
   const [currentElement, setCurrentElement] = useState(null);
+  // Локальная копия для редактирования
+  const [editedElement, setEditedElement] = useState(null);
   const [trackingEnabled, setTrackingEnabled] = useState(true); //синхронизация с чекбоксом
 
 
   // ✅ запросить текущий элемент при старте
   useEffect(() => {
     if (window.chrome?.webview) {
+      // опрашиваем текущий элемент при старте
+      // sendToWPF('getCurrentElement');
       // при старте отправляем статус чекбокса, если он true wpf вернет CurrentElement
       sendToWPF('trackCe', { enabled: true });
     }
   }, []);
 
 
-  // Обработчик изменения чекбокса
-  const handleTrackingChange = useCallback((isEnabled) => {
-    setTrackingEnabled(isEnabled);
-    if (window.chrome?.webview) sendToWPF('trackCe', { enabled: isEnabled });
-  }, []);
+  // ✅ При получении нового currentElement из WPF – обновляем черновик
+  useEffect(() => {
+    if (currentElement) {
+      setEditedElement({...currentElement});
+    }
+  }, [currentElement]);
 
 
-  // Подписка на сообщения из WPF (через postMessage)
+  // Подписка на входящие сообщения WPF (через postMessage)
   useEffect(() => {
     const handleMessageFromWPF = (event) => {
       const message = event.data;
@@ -51,10 +59,25 @@ function App() {
   }, []);
 
 
+  // Обработчик изменения чекбокса
+  const handleTrackingChange = useCallback((isEnabled) => {
+    setTrackingEnabled(isEnabled);
+    if (window.chrome?.webview) sendToWPF('trackCe', { enabled: isEnabled });
+  }, []);
+
+
   // Заглушка изменения имени DbElement (отправки в WPF)
   const handleFieldSave = (fieldKey, newValue) => {
     console.log(`[Заглушка] Сохранить ${fieldKey} = ${newValue}`);
-    // Здесь позже будет sendToWPF('updateElementField', { field: fieldKey, value: newValue });
+    if (!currentElement) return;
+    const originalValue = currentElement[fieldKey];
+    if (originalValue === newValue) {
+      console.log(`Поле ${fieldKey} не изменилось`);
+      return;
+    }
+    console.log(`Сохраняем ${fieldKey}: "${originalValue}" → "${newValue}"`);
+    // TODO: отправить в WPF
+    // sendToWPF('renameElement', { newName: newValue });
   };
 
 
@@ -64,6 +87,20 @@ function App() {
   };
 
 
+  // Обновление поля (печатает пользователь)
+  const handleFieldChange = (fieldKey, newValue) => {
+    setEditedElement(prev => ({
+      ...prev,
+      [fieldKey]: newValue
+    }));
+  };
+
+
+  if (!currentElement || !editedElement) {
+    return <div className="p-4">Загрузка данных элемента...</div>;
+  }
+
+
   return (
     <ElementContext.Provider value={currentElement}>
       <div className="p-4 space-y-1">
@@ -71,23 +108,24 @@ function App() {
         <div className="mt-2 p-3 border border-gray-300 rounded bg-gray-50">
           <LabelInputButton
           label="Name"
-          fieldKey="Name"
-          currentElement={currentElement}
-          onAction={handleFieldSave}
+          value={editedElement?.Name ?? ''}
+          onChange={(val) => handleFieldChange('Name', val)}
+          onSave={(val) => handleFieldSave('Name', val)}
           buttonLabel="Rename"
           actionType="save"
+          isChanged={editedElement.Name !== currentElement.Name}
           />
         </div>
         <div className="mt-1 p-3">
           <LabelInputButton
           label="RefNo"
-          fieldKey="Ref"
-          currentElement={currentElement}
-          onAction={(key, value) => handleRefCopy(key, value)}
+          value={editedElement.Ref}
+          onChange={() => {}}        // readOnly, изменять нельзя
+          onSave={() => {}}
           buttonLabel=""
           actionType="copy"
+          readOnly={true}
           buttonIcon={<CopyIcon />}
-          readOnly={true} 
           buttonClassName="w-8 h-8 p-0 justify-center"
           />
         </div>
