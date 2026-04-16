@@ -1,6 +1,6 @@
 // src/components/LabelInputButton.jsx
 import React, { useState, useEffect } from 'react';
-import { useCopyToClipboard } from '../hooks/UseCopyToClipboard';
+import { useCopyToClipboard } from '../hooks/hookCopyToClipboard';
 
 
 /**
@@ -58,12 +58,19 @@ const LabelInputButton = ({
         value={value ?? ''}
         onChange={(e) => onChange && onChange(e.target.value)}
         readOnly={readOnly}
-        className={`flex-1 border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${isChanged ? 'border-yellow-500 bg-yellow-50' : 'border-gray-300'}`}
+        className={`flex-1 border border-gray-300 rounded px-2 py-1 text-sm 
+          ${isChanged 
+            ? 'border-yellow-500 bg-yellow-50' 
+            : 'border-gray-300'}
+          ${readOnly 
+            ? 'focus:outline-none focus:ring-0 cursor-default' 
+            : 'hover:border-blue-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors'}
+        `}
       />
       <span className="relative">
         <button
           onClick={handleButtonClick}
-          className={`px-4 py-2 rounded text-sm flex items-center gap-1 ${
+          className={`px-4 py-1.5 rounded text-sm flex items-center gap-1 ${
             actionType === 'copy' 
               ? 'bg-blue-500 hover:bg-blue-600' 
               : 'bg-blue-500 hover:bg-blue-600'

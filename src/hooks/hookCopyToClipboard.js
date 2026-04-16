@@ -1,4 +1,4 @@
-// hooks/UseCopyToClipboard.js
+// hooks/hookCopyToClipboard.js
 import { useState } from 'react';
 import { copyToClipboard } from '../actions/CopyToClipboard';
 

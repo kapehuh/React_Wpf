@@ -3,20 +3,34 @@ import { ElementContext } from './contexts/ElementContext';
 import TrackCE from './components/TrackCE';
 import CopyIcon from './components/CopyIcon';
 import LabelValue from './components/LabelValue';
+import LabelSelect from './components/LabelSelect';
 import LabelInputButton from './components/LabelInputButton';
 import { sendToWPF } from './actions/SendMsgByHostObjects';
+import { fieldConfigs  } from './config/fieldConfigs';
+import { useFieldSelect } from './hooks/hookFieldSelect';
+
 
 
 
 function App() {
   //debugger;
+  //Правильный порядок в React-компоненте
+  // 1. ВСЕ объявления useState (в самом начале)
+  // 2. Все useEffect
+  // 3. Функции-обработчики
+  // 4. Защита от null
+  // 5. Рендер (только когда данные загружены)
+
+
+  // use_STATE состояния
   // Оригинал из WPF
   const [currentElement, setCurrentElement] = useState(null);
   // Локальная копия для редактирования
   const [editedElement, setEditedElement] = useState(null);
-  const [trackingEnabled, setTrackingEnabled] = useState(true); //синхронизация с чекбоксом
+  const [trackingEnabled, setTrackingEnabled] = useState(true); //синхронизация с чекбоксом, дублер состояния
+  
 
-
+  // use_EFFECT эффекты
   // ✅ запросить текущий элемент при старте
   useEffect(() => {
     if (window.chrome?.webview) {
@@ -59,6 +73,7 @@ function App() {
   }, []);
 
 
+  // use_CALLBACK обработчики
   // Обработчик изменения чекбокса
   const handleTrackingChange = useCallback((isEnabled) => {
     setTrackingEnabled(isEnabled);
@@ -81,12 +96,6 @@ function App() {
   };
 
 
-  // Обработчик для копирования (без сохранения)
-  const handleRefCopy = (fieldKey, value) => {
-    console.log('Просто копируем RefNo в буфер');
-  };
-
-
   // Обновление поля (печатает пользователь)
   const handleFieldChange = (fieldKey, newValue) => {
     setEditedElement(prev => ({
@@ -96,9 +105,21 @@ function App() {
   };
 
 
+  // use_CUSTOMHOOKS (Все функции в хуках, должны быть объявлены до их вызова)
+  // Извлекаем конфиг для удобства
+  const directionField = useFieldSelect(
+    'cwDDIR',
+    editedElement,
+    currentElement,
+    fieldConfigs.direction,
+    handleFieldChange
+  );
+
+
   if (!currentElement || !editedElement) {
     return <div className="p-4">Загрузка данных элемента...</div>;
   }
+  
 
 
   return (
@@ -116,12 +137,12 @@ function App() {
           isChanged={editedElement.Name !== currentElement.Name}
           />
         </div>
-        <div className="mt-1 p-3">
+        <div className="mt-1 p-2">
           <LabelInputButton
           label="RefNo"
           value={editedElement.Ref}
           onChange={() => {}}        // readOnly, изменять нельзя
-          onSave={() => {}}
+          //onSave={() => {}}
           buttonLabel=""
           actionType="copy"
           readOnly={true}
@@ -137,6 +158,17 @@ function App() {
         </div>
         <div className="w-full mt-1 p-3 border border-gray-300 rounded bg-gray-50">
           <LabelValue label=":SZone" value={currentElement?.sZone ?? '—'} ></LabelValue>
+        </div>
+        <div className="grid grid-cols-2 gap-4 mt-2 p-3">
+          <LabelSelect
+            label={directionField.label}
+            value={directionField.value}
+            options={directionField.options}
+            onChange={directionField.onChange}
+            layout={directionField.layout}
+            isChanged={directionField.isChanged}
+            disabled={directionField.disabled}
+          />
         </div>
       </div>
     </ElementContext.Provider>
