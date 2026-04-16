@@ -1,3 +1,4 @@
+//components/LabelSelect.jsx
 import React from 'react';
 
 /**
@@ -10,6 +11,7 @@ import React from 'react';
  * @param {string} layout - Расположение метки: 'left' (по умолчанию) или 'top'
  * @param {boolean} isChanged - Флаг подсветки (изменено, но не сохранено)
  * @param {boolean} disabled - Блокировка выбора (опционально)
+ * @param {string} inputClassName - Дополнительные классы для инпута (например, 'w-32', 'w-64')
  */
 const LabelSelect = ({
   label,
@@ -19,6 +21,7 @@ const LabelSelect = ({
   layout = 'left',
   isChanged = false,
   disabled = false,
+  inputClassName = '',
 }) => {
   const selectClasses = `
     border rounded px-2 py-1 text-sm
@@ -35,7 +38,7 @@ const LabelSelect = ({
           value={value ?? ''}
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
-          className={selectClasses}
+          className={`${selectClasses} ${inputClassName}`.trim()}
         >
           {options.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -49,13 +52,13 @@ const LabelSelect = ({
 
   // layout === 'left' (по умолчанию)
   return (
-    <div className="flex items-center gap-3 h-4 mb-0">
+    <div className="flex items-center gap-3">
       <label className="w-35 font-semibold text-gray-700">{label}:</label>
       <select
         value={value ?? ''}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className={selectClasses}
+        className={`${selectClasses} ${inputClassName}`.trim()}
       >
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>

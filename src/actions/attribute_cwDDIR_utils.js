@@ -1,6 +1,8 @@
+// src/actions/attribute_cwDDIR_utils.js
+
 // Опции для выпадающего списка
 export const DIRECTION_OPTIONS = [
-  { value: '', label: '— Не выбрано —' },
+  { value: '', label: '— Не задано —' },
   { value: 'N', label: 'N' },
   { value: 'S', label: 'S' },
   { value: 'W', label: 'W' },

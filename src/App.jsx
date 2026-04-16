@@ -3,6 +3,7 @@ import { ElementContext } from './contexts/ElementContext';
 import TrackCE from './components/TrackCE';
 import CopyIcon from './components/CopyIcon';
 import LabelValue from './components/LabelValue';
+import LabelInput from './components/LabelInput';
 import LabelSelect from './components/LabelSelect';
 import LabelInputButton from './components/LabelInputButton';
 import { sendToWPF } from './actions/SendMsgByHostObjects';
@@ -107,13 +108,9 @@ function App() {
 
   // use_CUSTOMHOOKS (Все функции в хуках, должны быть объявлены до их вызова)
   // Извлекаем конфиг для удобства
-  const directionField = useFieldSelect(
-    'cwDDIR',
-    editedElement,
-    currentElement,
-    fieldConfigs.direction,
-    handleFieldChange
-  );
+  const directionField = useFieldSelect('cwDDIR', editedElement, currentElement, fieldConfigs.direction, handleFieldChange);
+  const jusLineField = useFieldSelect('cwJusLine', editedElement, currentElement, fieldConfigs.jusLine, handleFieldChange);
+  const vShapeField = useFieldSelect('vShape', editedElement, currentElement, fieldConfigs.vShape, handleFieldChange);
 
 
   if (!currentElement || !editedElement) {
@@ -159,7 +156,56 @@ function App() {
         <div className="w-full mt-1 p-3 border border-gray-300 rounded bg-gray-50">
           <LabelValue label=":SZone" value={currentElement?.sZone ?? '—'} ></LabelValue>
         </div>
-        <div className="grid grid-cols-2 gap-4 mt-2 p-3">
+        <div className="grid grid-cols-2 gap-4 mt-1 ml-5 p-3 font-semibold text-gray-700 rounded">
+          <label className="ml-5 w-70">Размеры выделенного элемента:</label>
+        </div>
+        <div className="grid grid-cols-2 gap-4 font-semibold text-gray-700 rounded">
+          {/* Высота */}
+          <LabelInput
+            label="Высота"
+            value={editedElement.Description}
+            onChange={(val) => handleFieldChange('Description', val)}
+            layout="left"
+            isChanged={editedElement.Description !== currentElement.Description}
+            disabled={!currentElement.Name}   // например, если атрибут отсутствует, поле заблокировано
+            placeholder="Высота"
+            inputClassName="w-36"
+          />
+          {/* Форма: */}
+          <LabelSelect
+            label={vShapeField.label}
+            value={vShapeField.value}
+            options={vShapeField.options}
+            onChange={vShapeField.onChange}
+            layout={vShapeField.layout}
+            isChanged={vShapeField.isChanged}
+            disabled={vShapeField.disabled}
+            inputClassName="w-40"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-4 mt-0 p-0 font-semibold text-gray-700 rounded">
+          {/* Ширина */}
+          <LabelInput
+            label="Ширина"
+            value={editedElement.Description}
+            onChange={(val) => handleFieldChange('Description', val)}
+            layout="left"
+            isChanged={editedElement.Description !== currentElement.Description}
+            disabled={!currentElement.Name}   // например, если атрибут отсутствует, поле заблокировано
+            placeholder="Ширина"
+            inputClassName="w-36"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-4 mt-1 ml-5 p-3 font-semibold text-gray-700 rounded">
+          <LabelSelect
+            label={jusLineField.label}
+            value={jusLineField.value}
+            options={jusLineField.options}
+            onChange={jusLineField.onChange}
+            layout={jusLineField.layout}
+            isChanged={jusLineField.isChanged}
+            disabled={jusLineField.disabled}
+          />
           <LabelSelect
             label={directionField.label}
             value={directionField.value}

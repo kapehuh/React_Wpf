@@ -1,3 +1,4 @@
+//hooks/hookFieldSelect.js
 import { useMemo } from 'react';
 
 // fieldConfig - нужен, чтобы передать в хук поведение, специфичное для поля
