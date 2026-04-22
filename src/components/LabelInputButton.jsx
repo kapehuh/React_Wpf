@@ -51,20 +51,16 @@ const LabelInputButton = ({
 
   return (
     <div className="flex items-center gap-3 mb-0">
-      <label className={"w-20 font-semibold text-gray-700"}>{label}:</label>
+      <label className={"w-20 font-semibold text-gray-700 select-none"}>{label}:</label>
       
       <input
         type="text"
         value={value ?? ''}
         onChange={(e) => onChange && onChange(e.target.value)}
         readOnly={readOnly}
-        className={`flex-1 border border-gray-300 rounded px-2 py-1 text-sm 
-          ${isChanged 
-            ? 'border-yellow-500 bg-yellow-50' 
-            : 'border-gray-300'}
-          ${readOnly 
-            ? 'focus:outline-none focus:ring-0 cursor-default' 
-            : 'hover:border-blue-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors'}
+        className={`flex-1 border rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500
+    ${isChanged ? 'border-yellow-500 bg-yellow-50' : 'border-gray-300'}
+    ${readOnly ? 'bg-gray-100 cursor-default' : 'bg-white'}
         `}
       />
       <span className="relative">

@@ -1,10 +1,10 @@
-// src/actions/attribute_cwDDIR_utils.js
+// src/actions/attribute_cwLOAD_utils.js
 
 // Проверяет, есть ли атрибут (значение не пустое)
-export const iscwDDIRAttributePresent = (value) => value != null && value !== '';
+export const isCwLoadAttributePresent = (value) => value != null && value !== '';
 
 // Возвращает опции для комбобокса, добавляя произвольное значение, если нужно
-export const getDirectionOptions = (currentValue, originalValue) => {
+export const getCwLoadOptions = (currentValue, originalValue) => {
   const predefinedOptions = [
     { value: '', label: '— Не задано —' },
     { value: 'E', label: 'E' },

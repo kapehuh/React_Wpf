@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react'
 
 /**
  * Компонент текстового поля с меткой.
- * Поддерживает редактирование, подсветку изменений, расположение метки (left/top) и возможность скрыть метку.
+ * Поддерживает редактирование, подсветку изменений, расположение метки (left/top) и возможность скрыть метку, а также числовой режим с валидацией.
  *
  * @param {string} label - Текст метки (если hideLabel=true, не отображается)
  * @param {string} value - Текущее значение (из editedElement)
@@ -11,13 +11,15 @@ import React from 'react';
  * @param {boolean} isChanged - Флаг подсветки (изменено, но не сохранено)
  * @param {boolean} disabled - Блокировка редактирования (инпут становится серым и недоступным)
  * @param {string} placeholder - Текст-подсказка (опционально)
- * @param {string} type - Тип инпута (text, number, password и т.д.), по умолчанию 'text'
+ * @param {string} type - Тип инпута (text, number, password и т.д.), игнорируется при numeric=true
  * @param {boolean} hideLabel - Полностью скрыть метку (полезно, если нужно только поле ввода)
  * @param {string} inputClassName - Дополнительные классы для инпута (например, 'w-32', 'w-64')
+ * @param {boolean} numeric - Включить числовой режим (только цифры и точка, без отрицательных)
  */
 const LabelInput = ({
   label,
   value,
+  originalValue,
   onChange,
   layout = 'left',
   isChanged = false,
@@ -26,21 +28,142 @@ const LabelInput = ({
   type = 'text',
   hideLabel = false,
   inputClassName = '',
+  numeric = false,
+  blockOnEmpty = false, // блокировать при пустой строке
 }) => {
-  const baseInputClasses  = `
+  // Локальное состояние для отображаемого текста (важно для числового режима)
+  const [localValue, setLocalValue] = useState('');
+
+  // Определяем, является ли значение "отсутствующим" (только для числового режима)
+  const isMissing = (blockOnEmpty && (value === '' || value === null)) ||
+                    (numeric && (value === -1 || value === '-1'));
+
+
+  // Cинхронизации локального значения
+  useEffect(() => {
+    if (numeric) {
+      if (isMissing) {
+        setLocalValue('');
+      } else {
+        // Приводим к строке, даже если value число
+        setLocalValue(value?.toString() ?? '');
+      }
+    } else if (blockOnEmpty) {
+      if (isMissing) setLocalValue('');
+      else setLocalValue(value ?? '');
+    } else {
+      // В текстовом режиме локальное состояние не используется,
+      // но для единообразия можно синхронизировать (необязательно)
+      setLocalValue(value ?? '');
+    }
+  }, [numeric, blockOnEmpty, value, isMissing]);
+
+
+  // Валидация для числового режима: только цифры и одна точка, без минуса
+  const isValidInput = (input) => {
+    // Разрешаем пустую строку (в процессе редактирования),
+    // но финальное значение не должно быть пустым (обработается в onBlur)
+    if (numeric) {
+      if (input === '') return false;
+      return /^\d*\.?\d*$/.test(input);
+    }
+    if (blockOnEmpty) {
+      return true; // разрешаем любую строку, включая пустую
+    }
+    return true; // обычный текст – всё можно
+  };
+
+  // Обработчик изменения (вызывается при каждом вводе)
+  const handleChange = (e) => {
+    const raw = e.target.value;
+    if (numeric || blockOnEmpty) {
+      // Если атрибут отсутствует, не даём редактировать
+      if (isMissing) return;
+      // Валидируем ввод
+      if (isValidInput(raw)) {
+        setLocalValue(raw);
+        // Для числового режима передаём число, иначе строку
+        if (numeric) {
+          if (raw !== '') {
+            const numValue = parseFloat(raw);
+            if (!isNaN(numValue)) onChange(numValue);
+          }
+        } else if (blockOnEmpty) {
+          if (raw !== '') {
+            onChange(raw);
+          }
+        } else {
+          onChange(raw);
+        }
+      }
+    } else {
+      // Текстовый режим
+      onChange(raw);
+    }
+  };
+
+  // Обработчик потери фокуса (только для числового режима)
+  const handleBlur = () => {
+    if ((!numeric && !blockOnEmpty) || isMissing) return;
+    let trimmed = localValue.trim();
+    const isEmpty = trimmed === '' || (numeric && trimmed === '.');
+    if (isEmpty) {
+      // Восстанавливаем исходное значение (не пустое, если оно было)
+      let fallback;
+      if (blockOnEmpty) {
+        // Если изначально атрибут был (originalValue не пустой), то восстанавливаем его
+        fallback = (originalValue && originalValue !== '') ? originalValue : (value && value !== '' ? value : '');
+      } else if (numeric) {
+        fallback = (originalValue !== undefined && originalValue !== -1) ? originalValue : (value === -1 ? 0 : value);
+      } else {
+        fallback = value ?? '';
+      }
+      const restoredStr = fallback?.toString() ?? '';
+      setLocalValue(restoredStr);
+      if (numeric) {
+        const num = parseFloat(restoredStr);
+        if (!isNaN(num)) onChange(num);
+      } else {
+        if (restoredStr !== '') onChange(restoredStr);
+      }
+      return;
+    }
+    // Убираем точку в конце для числового режима
+    if (numeric && trimmed.endsWith('.')) {
+      trimmed = trimmed.slice(0, -1);
+      setLocalValue(trimmed);
+      const numValue = parseFloat(trimmed);
+      if (!isNaN(numValue)) onChange(numValue);
+    }
+  };
+
+  const baseInputClasses = `
     border rounded px-2 py-1 text-sm
     focus:outline-none focus:ring-1 focus:ring-blue-500
-    ${isChanged ? 'border-yellow-500 bg-yellow-50' : 'border-gray-300'}
-    ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}
+    ${isChanged && !isMissing ? 'border-yellow-500 bg-yellow-50' : 'border-gray-300'}
+    ${disabled || isMissing ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}
   `;
 
+  // Определяем, что показывать в поле
+  let inputValue;
+  if (numeric || blockOnEmpty) {
+    inputValue = localValue;
+  } else {
+    inputValue = value ?? '';
+  }
+
+  // Определяем плейсхолдер для числового режима при отсутствии атрибута
+  const finalPlaceholder = isMissing ? '- Не задано -' : placeholder;
+
+  // Рендер инпута
   const inputElement = (
     <input
-      type={type}
-      value={value ?? ''}
-      onChange={(e) => onChange(e.target.value)}
-      disabled={disabled}
-      placeholder={placeholder}
+      type={numeric ? 'text' : type} // числовой режим использует text для ручной валидации
+      value={inputValue}
+      onChange={handleChange}
+      onBlur={(numeric || blockOnEmpty) ? handleBlur : undefined}
+      disabled={disabled || isMissing}
+      placeholder={finalPlaceholder}
       className={`${baseInputClasses} ${inputClassName}`.trim()}
     />
   );
@@ -49,19 +172,17 @@ const LabelInput = ({
   if (hideLabel) {
     return <div className="mb-3">{inputElement}</div>;
   }
+
   // Расположение метки сверху
-  if (layout === 'top') {
-    return (
-      <div className="mb-3">
-        <label className="block font-semibold text-gray-700 mb-1">{label}:</label>
-        {inputElement}
-      </div>
-    );
-  }
-  // Расположение метки слева (по умолчанию)
+  if (layout === 'top') return (
+    <div className="mb-3">
+      <label className="block font-semibold text-gray-700 mb-1 select-none ml-1">{label}:</label>
+      {inputElement}
+    </div>
+  );
   return (
-    <div className="flex items-center gap-3">
-      <label className="w-20 font-semibold text-gray-700">{label}:</label>
+    <div className="flex items-center">
+      <label className="w-25 font-semibold text-gray-700 select-none">{label}:</label>
       {inputElement}
     </div>
   );

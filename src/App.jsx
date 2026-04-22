@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { ElementContext } from './contexts/ElementContext';
 import TrackCE from './components/TrackCE';
 import CopyIcon from './components/CopyIcon';
 import LabelValue from './components/LabelValue';
 import LabelInput from './components/LabelInput';
 import LabelSelect from './components/LabelSelect';
+import FileSelector from './components/FileSelector';
+import WeightWithUnit from './components/WeightWithUnitInputSelect';
 import LabelInputButton from './components/LabelInputButton';
 import { sendToWPF } from './actions/SendMsgByHostObjects';
 import { fieldConfigs  } from './config/fieldConfigs';
@@ -29,7 +31,8 @@ function App() {
   // Локальная копия для редактирования
   const [editedElement, setEditedElement] = useState(null);
   const [trackingEnabled, setTrackingEnabled] = useState(true); //синхронизация с чекбоксом, дублер состояния
-  
+  const pendingRequests = useRef(new Map());
+
 
   // use_EFFECT эффекты
   // ✅ запросить текущий элемент при старте
@@ -60,6 +63,14 @@ function App() {
         const parsed = typeof message === 'string' ? JSON.parse(message) : message;
         if (parsed.action === 'elementChanged' && parsed.payload) {
           setCurrentElement(parsed.payload);
+        }
+        // 'selectedFile' - отправляет WPF как команду и 'request_id' как идентификатор для resolve
+        if (parsed.action === 'selectedFile') {
+          const resolve = pendingRequests.current.get(parsed.request_id);
+          if (resolve) {
+            resolve(parsed.path ?? null);
+            pendingRequests.delete(parsed.request_id);
+          }
         }
       } catch (e) {
         console.warn('Failed to parse message received from WPF', e);
@@ -108,7 +119,8 @@ function App() {
 
   // use_CUSTOMHOOKS (Все функции в хуках, должны быть объявлены до их вызова)
   // Извлекаем конфиг для удобства
-  const directionField = useFieldSelect('cwDDIR', editedElement, currentElement, fieldConfigs.direction, handleFieldChange);
+  const rPathYdirField = useFieldSelect('cwRpathYdir', editedElement, currentElement, fieldConfigs.direction, handleFieldChange);
+  const cwDDIRField = useFieldSelect('cwDDIR', editedElement, currentElement, fieldConfigs.direction_top, handleFieldChange);
   const jusLineField = useFieldSelect('cwJusLine', editedElement, currentElement, fieldConfigs.jusLine, handleFieldChange);
   const vShapeField = useFieldSelect('vShape', editedElement, currentElement, fieldConfigs.vShape, handleFieldChange);
 
@@ -121,7 +133,7 @@ function App() {
 
   return (
     <ElementContext.Provider value={currentElement}>
-      <div className="p-4 space-y-1">
+      <div className="p-4 space-y-1 min-w-[500px] overflow-x-auto">
         <TrackCE onTrackingChange={handleTrackingChange} initialChecked={true} />
         <div className="mt-2 p-3 border border-gray-300 rounded bg-gray-50">
           <LabelInputButton
@@ -134,7 +146,7 @@ function App() {
           isChanged={editedElement.Name !== currentElement.Name}
           />
         </div>
-        <div className="mt-1 p-2">
+        <div className="mt-1 ml-1 p-2">
           <LabelInputButton
           label="RefNo"
           value={editedElement.Ref}
@@ -156,64 +168,133 @@ function App() {
         <div className="w-full mt-1 p-3 border border-gray-300 rounded bg-gray-50">
           <LabelValue label=":SZone" value={currentElement?.sZone ?? '—'} ></LabelValue>
         </div>
-        <div className="grid grid-cols-2 gap-4 mt-1 ml-5 p-3 font-semibold text-gray-700 rounded">
-          <label className="ml-5 w-70">Размеры выделенного элемента:</label>
+
+        <div className="w-full mt-1 p-3 grid grid-cols-2 grid-rows-4 gap-1 font-semibold text-gray-700 rounded">
+          <div className="ml-2 col-start-1 row-start-1">
+            <label className="-ml-3 whitespace-nowrap select-none">Размеры выделенного элемента:</label>
+            <div className='mt-1 -ml-1 whitespace-nowrap'>
+              {/* Высота */}
+              <LabelInput
+                label="Высота"
+                value={editedElement.vHeig}
+                originalValue={currentElement.vHeig}
+                onChange={(val) => handleFieldChange('vheig', val)}
+                numeric={true}
+                isChanged={editedElement.vHeig !== currentElement.vHeig}
+                inputClassName="w-36"
+                placeholder="Высота"
+              />
+            </div>
+            <div className='mt-1 -ml-1 whitespace-nowrap'>
+              {/* Ширина */}
+              <LabelInput
+                label="Ширина"
+                value={editedElement.vWidth}
+                originalValue={currentElement.vWidth}
+                onChange={(val) => handleFieldChange('vwidth', val)}
+                numeric={true}
+                isChanged={editedElement.vWidth !== currentElement.vWidth}
+                inputClassName="w-36"
+                placeholder="Ширина"
+              />
+            </div>
+          </div>
+          <div className="ml-15 mt-2 col-start-2 row-start-1">
+            {/* Форма: */}
+            <LabelSelect
+              label={vShapeField.label}
+              value={vShapeField.value}
+              options={vShapeField.options}
+              onChange={vShapeField.onChange}
+              layout={vShapeField.layout}
+              isChanged={vShapeField.isChanged}
+              disabled={vShapeField.disabled}
+              inputClassName="w-40"
+            />
+          </div>
+          <div className="-ml-23 mt-3 col-start-2 row-start-2">
+            <div className="whitespace-nowrap">
+              {/* Линия привязки */}
+              <LabelSelect
+                label={jusLineField.label}
+                value={jusLineField.value}
+                options={jusLineField.options}
+                onChange={jusLineField.onChange}
+                layout={jusLineField.layout}
+                isChanged={jusLineField.isChanged}
+                disabled={jusLineField.disabled}
+                inputClassName="w-40"
+              />
+            </div>
+            <div className="mt-1">
+              {/* Открытая часть верх */}
+              <LabelSelect
+                label={cwDDIRField.label}
+                value={cwDDIRField.value}
+                options={cwDDIRField.options}
+                onChange={cwDDIRField.onChange}
+                layout={cwDDIRField.layout}
+                isChanged={cwDDIRField.isChanged}
+                disabled={cwDDIRField.disabled}
+                inputClassName="w-40"
+              />
+            </div>
+          </div>
+          <div className="mt-1 -ml-2 col-start-1 row-start-3">
+            {/* Название разреза */}
+            <LabelInput
+              label="Название разреза"
+              value={editedElement.cwDNAM}
+              originalValue={currentElement.cwDNAM}
+              onChange={(val) => handleFieldChange('cwDNAM', val)}
+              layout="top"
+              blockOnEmpty={true}
+              isChanged={editedElement.cwDNAM !== currentElement.cwDNAM}
+              inputClassName="w-62"
+              placeholder="Разрез"
+            />
+          </div>
+          <div className="mt-1 ml-5 col-start-2 row-start-3 whitespace-nowrap">
+            {/* Направление разреза */}
+            <LabelSelect
+              label={rPathYdirField.label}
+              value={rPathYdirField.value}
+              options={rPathYdirField.options}
+              onChange={rPathYdirField.onChange}
+              layout={rPathYdirField.layout}
+              isChanged={rPathYdirField.isChanged}
+              disabled={rPathYdirField.disabled}
+              inputClassName="w-50"
+            />
+          </div>
+          <div className="-ml-2 -mt-5 col-span-2 row-start-4 whitespace-nowrap">
+            {/* Нагрузка */}
+            <WeightWithUnit
+              value={editedElement.cwLoad}
+              originalValue={currentElement.cwLoad}
+              onChange={(newWeight) => handleFieldChange('cwLoad', newWeight)}
+            />
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-4 font-semibold text-gray-700 rounded">
-          {/* Высота */}
-          <LabelInput
-            label="Высота"
-            value={editedElement.Description}
-            onChange={(val) => handleFieldChange('Description', val)}
-            layout="left"
-            isChanged={editedElement.Description !== currentElement.Description}
-            disabled={!currentElement.Name}   // например, если атрибут отсутствует, поле заблокировано
-            placeholder="Высота"
-            inputClassName="w-36"
-          />
-          {/* Форма: */}
-          <LabelSelect
-            label={vShapeField.label}
-            value={vShapeField.value}
-            options={vShapeField.options}
-            onChange={vShapeField.onChange}
-            layout={vShapeField.layout}
-            isChanged={vShapeField.isChanged}
-            disabled={vShapeField.disabled}
-            inputClassName="w-40"
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-4 mt-0 p-0 font-semibold text-gray-700 rounded">
-          {/* Ширина */}
-          <LabelInput
-            label="Ширина"
-            value={editedElement.Description}
-            onChange={(val) => handleFieldChange('Description', val)}
-            layout="left"
-            isChanged={editedElement.Description !== currentElement.Description}
-            disabled={!currentElement.Name}   // например, если атрибут отсутствует, поле заблокировано
-            placeholder="Ширина"
-            inputClassName="w-36"
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-4 mt-1 ml-5 p-3 font-semibold text-gray-700 rounded">
-          <LabelSelect
-            label={jusLineField.label}
-            value={jusLineField.value}
-            options={jusLineField.options}
-            onChange={jusLineField.onChange}
-            layout={jusLineField.layout}
-            isChanged={jusLineField.isChanged}
-            disabled={jusLineField.disabled}
-          />
-          <LabelSelect
-            label={directionField.label}
-            value={directionField.value}
-            options={directionField.options}
-            onChange={directionField.onChange}
-            layout={directionField.layout}
-            isChanged={directionField.isChanged}
-            disabled={directionField.disabled}
+        <div className='flex -mt-15 ml-1'>
+          <FileSelector
+            label="Ссылка на файл разреза"
+            value={editedElement.cwDrawingPath}
+            originalValue={currentElement.cwDrawingPath}
+            onChange={(newPath) => handleFieldChange('cwDrawingPath', newPath)}
+            blockOnEmpty={true}
+            isChanged={editedElement.cwDrawingPath !== currentElement.cwDrawingPath}
+            layout="top"
+            placeholder="Путь к файлу"
+            inputClassName="w-96"
+            onBrowse={async () => {
+              const requestId = crypto.randomUUID(); // строка, уникальный идентификатор
+              // Отправляем команду в WPF и ждём ответа
+              return new Promise((resolve) => {
+                pendingRequests.current.set(requestId, resolve);
+                sendToWPF('openFileDialog', { requestId });
+              });
+            }}
           />
         </div>
       </div>

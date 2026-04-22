@@ -1,20 +1,19 @@
 // src/actions/attribute_VShape_utils.js
 
 // Опции для выпадающего списка
-export const VSHAPE_OPTIONS = [
-  { value: '', label: '— Не задано —' },
-  { value: '0', label: 'Прямоугольник' },
-  { value: '1', label: 'Круг' }
-];
+export const VSHAPE_OPTIONS = {
+  rectangle: { value: '0', label: 'Прямоугольник' },
+  circle: { value: '1', label: 'Круг' },
+  absent: { value: '2', label: '— Не задано —' },
+};
 
 // Проверяет, есть ли атрибут (значение не пустое)
-export const isVShapeAttributePresent = (value) => value != null && value !== '';
+export const isVShapeAttributePresent = (value) => value === '0' || value === '1';
 
 // Возвращает опции для комбобокса, добавляя произвольное значение, если нужно
-export const getVShapeOptions = (currentValue) => {
-  const predefinedValues = VSHAPE_OPTIONS.map(opt => opt.value);
-  if (currentValue && !predefinedValues.includes(currentValue)) {
-    return [...VSHAPE_OPTIONS, { value: currentValue, label: `Произвольное: ${currentValue}` }];
+export const getVShapeOptions = (currentValue, originalValue) => {
+  if (originalValue === '2') {
+    return [VSHAPE_OPTIONS.absent];
   }
-  return VSHAPE_OPTIONS;
+  return [VSHAPE_OPTIONS.rectangle, VSHAPE_OPTIONS.circle];
 };

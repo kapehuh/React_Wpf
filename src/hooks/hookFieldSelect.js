@@ -9,8 +9,8 @@ export const useFieldSelect = (fieldKey, editedElement, currentElement, fieldCon
   const originalValue = currentElement?.[fieldKey];
 
   const options = useMemo(
-    () => fieldConfig.getOptions(value),
-    [fieldConfig, value]
+    () => fieldConfig.getOptions(value, originalValue),
+    [fieldConfig, value, originalValue]
   );
 
   const isChanged = value !== originalValue;

@@ -11,6 +11,7 @@ import React from 'react';
  * @param {string} layout - Расположение метки: 'left' (по умолчанию) или 'top'
  * @param {boolean} isChanged - Флаг подсветки (изменено, но не сохранено)
  * @param {boolean} disabled - Блокировка выбора (опционально)
+ * @param {string} labelClassName - Дополнительные классы для метки (например, 'w-32', 'w-64')
  * @param {string} inputClassName - Дополнительные классы для инпута (например, 'w-32', 'w-64')
  */
 const LabelSelect = ({
@@ -21,19 +22,21 @@ const LabelSelect = ({
   layout = 'left',
   isChanged = false,
   disabled = false,
+  labelClassName = '',
   inputClassName = '',
 }) => {
   const selectClasses = `
     border rounded px-2 py-1 text-sm
     focus:outline-none focus:ring-1 focus:ring-blue-500
     ${isChanged ? 'border-yellow-500 bg-yellow-50' : 'border-gray-300'}
-    ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}
+    ${disabled ? 'bg-gray-100 cursor-default opacity-70' : 'bg-white'}
   `;
 
+  // layout === 'top'
   if (layout === 'top') {
     return (
       <div className="mb-3">
-        <label className="block font-semibold text-gray-700 mb-1">{label}:</label>
+        <label className="w-45 ml-1 block font-semibold text-gray-700 mb-1 select-none">{label}:</label>
         <select
           value={value ?? ''}
           onChange={(e) => onChange(e.target.value)}
@@ -53,7 +56,9 @@ const LabelSelect = ({
   // layout === 'left' (по умолчанию)
   return (
     <div className="flex items-center gap-3">
-      <label className="w-35 font-semibold text-gray-700">{label}:</label>
+      <label className={`font-semibold text-gray-700 select-none ${labelClassName || 'w-35'}`}>
+        {label}:
+      </label>
       <select
         value={value ?? ''}
         onChange={(e) => onChange(e.target.value)}

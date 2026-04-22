@@ -1,10 +1,10 @@
-// src/actions/attribute_cwDDIR_utils.js
+// src/actions/attribute_cwRpathYdir_utils.js
 
 // Проверяет, есть ли атрибут (значение не пустое)
-export const iscwDDIRAttributePresent = (value) => value != null && value !== '';
+export const iscwRpathYdirAttributePresent = (value) => value != null && value !== '' && value != 'undefined';
 
 // Возвращает опции для комбобокса, добавляя произвольное значение, если нужно
-export const getDirectionOptions = (currentValue, originalValue) => {
+export const getCwRpathYdirOptions = (currentValue, originalValue) => {
   const predefinedOptions = [
     { value: '', label: '— Не задано —' },
     { value: 'E', label: 'E' },
