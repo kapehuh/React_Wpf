@@ -23,9 +23,14 @@ const LabelInputButton = ({
     buttonIcon,
     buttonClassName = "",  // true → подсветка жёлтым (поле изменено, но не сохранено)
     isChanged = false,    // true → подсветка жёлтым (поле изменено, но не сохранено)
+    buttonTitle,
    }) => {
 
-  // Используем хук для копирования
+  // Формируем title по умолчанию, если buttonTitle не передан
+  const defaultTitle = actionType === 'copy' ? 'Копировать в буфер обмена' : 'Сохранить изменения';
+  const finalTitle = buttonTitle !== undefined ? buttonTitle : defaultTitle;
+  
+    // Используем хук для копирования
   const { copy, showTooltip } = useCopyToClipboard();
   
   // Обработчик кнопки
@@ -58,14 +63,18 @@ const LabelInputButton = ({
         value={value ?? ''}
         onChange={(e) => onChange && onChange(e.target.value)}
         readOnly={readOnly}
-        className={`flex-1 border rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500
-    ${isChanged ? 'border-yellow-500 bg-yellow-50' : 'border-gray-300'}
-    ${readOnly ? 'bg-gray-100 cursor-default' : 'bg-white'}
+        className={`flex-1 border rounded px-2 py-1 text-sm
+          ${isChanged ? 'border-yellow-500 bg-yellow-50' : 'border-gray-300'}
+          ${readOnly 
+            ? 'bg-gray-100 cursor-default focus:outline-none focus:ring-0' 
+            : 'bg-white hover:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500'
+          }
         `}
       />
       <span className="relative">
         <button
           onClick={handleButtonClick}
+          title={finalTitle}
           className={`px-4 py-1.5 rounded text-sm flex items-center gap-1 ${
             actionType === 'copy' 
               ? 'bg-blue-500 hover:bg-blue-600' 

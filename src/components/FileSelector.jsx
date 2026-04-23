@@ -73,20 +73,10 @@ const FileSelector = ({
   const handleOpen = () => {
     if (disabled || isMissing || !localValue) return;
     // Отправляем команду в WPF
-    console.log(`[Заглушка] openFile ${ path.localValue }`);
+    console.log(`[Заглушка] openFile ${ localValue }`);
     //sendToWPF('openFile', { path: localValue });
   };
 
-  const handleMouseEnter = () => {
-    tooltipTimeoutRef.current = setTimeout(() => {
-      setShowTooltip(true);
-    }, 200); // задержка 0.2 сек
-  }
-
-  const handleMouseLeave = () => {
-    clearTimeout(tooltipTimeoutRef.current);
-    setShowTooltip(false);
-  }
 
   const baseInputClasses = `
     border rounded px-2 py-1 text-sm w-103
@@ -102,16 +92,15 @@ const FileSelector = ({
   `;
 
   const inputElement = (
-    <div className="flex items-center gap-2 flex-1 position: relative">
+    <div className="flex items-center gap-2 flex-1 position: relative w-full">
       <input
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
+        title={localValue}
         type="text"
         value={localValue}
         readOnly
         onClick={handleBrowse}
         placeholder={isMissing ? 'не задан' : placeholder}
-        className={`${baseInputClasses} ${inputClassName}`.trim()}
+        className={`flex-1 ${baseInputClasses} ${inputClassName}`.trim()}
       />
       {showTooltip && localValue && (
         <div className="absolute z-10 bg-gray-500 text-white text-xs rounded px-2 py-1 whitespace-nowrap" style={{ top: '100%', left: 0 }}>
@@ -128,18 +117,19 @@ const FileSelector = ({
       )}
       <button
         type="button"
+        title='Открыть в AutoCad/NanoCad'
         onClick={handleOpen}
         disabled={disabled || isMissing}
         className={buttonClasses}
       >
-        Открыть...
+        Открыть в ...
       </button>
     </div>
   );
 
   if (layout === 'top') {
     return (
-      <div className="mb-3">
+      <div className="mb-3 w-full">
         <label className="block font-semibold text-gray-700 mb-1 select-none ml-1">{label}:</label>
         {inputElement}
       </div>

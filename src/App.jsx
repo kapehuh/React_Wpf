@@ -130,7 +130,6 @@ function App() {
   }
   
 
-
   return (
     <ElementContext.Provider value={currentElement}>
       <div className="p-4 space-y-1 min-w-[500px] overflow-x-auto">
@@ -144,6 +143,7 @@ function App() {
           buttonLabel="Rename"
           actionType="save"
           isChanged={editedElement.Name !== currentElement.Name}
+          buttonTitle="Переименовать текущий элемент"
           />
         </div>
         <div className="mt-1 ml-1 p-2">
@@ -159,13 +159,13 @@ function App() {
           buttonClassName="w-8 h-8 p-0 justify-center"
           />
         </div>
-        <div className="w-full mt-1 p-3 border border-gray-300 rounded bg-gray-50">
+        <div className="w-full mt-1 p-2 border border-gray-300 rounded bg-gray-50">
           <LabelValue label="Site" value={currentElement?.Site ?? '-'} ></LabelValue>
         </div>
-        <div className="w-full mt-1 p-3 border border-gray-300 rounded bg-gray-50">
+        <div className="w-full mt-1 p-2 border border-gray-300 rounded bg-gray-50">
           <LabelValue label="Zone" value={currentElement?.Zone ?? '—'} ></LabelValue>
         </div>
-        <div className="w-full mt-1 p-3 border border-gray-300 rounded bg-gray-50">
+        <div className="w-full mt-1 p-2 border border-gray-300 rounded bg-gray-50">
           <LabelValue label=":SZone" value={currentElement?.sZone ?? '—'} ></LabelValue>
         </div>
 
@@ -178,7 +178,7 @@ function App() {
                 label="Высота"
                 value={editedElement.vHeig}
                 originalValue={currentElement.vHeig}
-                onChange={(val) => handleFieldChange('vheig', val)}
+                onChange={(val) => handleFieldChange('vHeig', val)}
                 numeric={true}
                 isChanged={editedElement.vHeig !== currentElement.vHeig}
                 inputClassName="w-36"
@@ -191,7 +191,7 @@ function App() {
                 label="Ширина"
                 value={editedElement.vWidth}
                 originalValue={currentElement.vWidth}
-                onChange={(val) => handleFieldChange('vwidth', val)}
+                onChange={(val) => handleFieldChange('vWidth', val)}
                 numeric={true}
                 isChanged={editedElement.vWidth !== currentElement.vWidth}
                 inputClassName="w-36"
@@ -199,7 +199,7 @@ function App() {
               />
             </div>
           </div>
-          <div className="ml-15 mt-2 col-start-2 row-start-1">
+          <div className="ml-15 mt-2 col-start-2 row-start-1 select-none">
             {/* Форма: */}
             <LabelSelect
               label={vShapeField.label}
@@ -210,6 +210,14 @@ function App() {
               isChanged={vShapeField.isChanged}
               disabled={vShapeField.disabled}
               inputClassName="w-40"
+            />
+            <LabelValue 
+              label="Отметка:" 
+              value={
+                currentElement?.zPos && currentElement.zPos !== '' && !isNaN(Number(currentElement.zPos))
+                ? (Number(currentElement.zPos) / 1000).toLocaleString() + ' м'
+                : '—'
+              }
             />
           </div>
           <div className="-ml-23 mt-3 col-start-2 row-start-2">
@@ -229,13 +237,13 @@ function App() {
             <div className="mt-1">
               {/* Открытая часть верх */}
               <LabelSelect
-                label={cwDDIRField.label}
-                value={cwDDIRField.value}
-                options={cwDDIRField.options}
-                onChange={cwDDIRField.onChange}
-                layout={cwDDIRField.layout}
-                isChanged={cwDDIRField.isChanged}
-                disabled={cwDDIRField.disabled}
+                label={rPathYdirField.label}
+                value={rPathYdirField.value}
+                options={rPathYdirField.options}
+                onChange={rPathYdirField.onChange}
+                layout={rPathYdirField.layout}
+                isChanged={rPathYdirField.isChanged}
+                disabled={rPathYdirField.disabled}
                 inputClassName="w-40"
               />
             </div>
@@ -254,17 +262,17 @@ function App() {
               placeholder="Разрез"
             />
           </div>
-          <div className="mt-1 ml-5 col-start-2 row-start-3 whitespace-nowrap">
+          <div className="mt-1 ml-15 col-start-2 row-start-3 whitespace-nowrap">
             {/* Направление разреза */}
             <LabelSelect
-              label={rPathYdirField.label}
-              value={rPathYdirField.value}
-              options={rPathYdirField.options}
-              onChange={rPathYdirField.onChange}
-              layout={rPathYdirField.layout}
-              isChanged={rPathYdirField.isChanged}
-              disabled={rPathYdirField.disabled}
-              inputClassName="w-50"
+              label={cwDDIRField.label}
+              value={cwDDIRField.value}
+              options={cwDDIRField.options}
+              onChange={cwDDIRField.onChange}
+              layout={cwDDIRField.layout}
+              isChanged={cwDDIRField.isChanged}
+              disabled={cwDDIRField.disabled}
+              inputClassName="w-40"
             />
           </div>
           <div className="-ml-2 -mt-5 col-span-2 row-start-4 whitespace-nowrap">
@@ -276,7 +284,7 @@ function App() {
             />
           </div>
         </div>
-        <div className='flex -mt-15 ml-1'>
+        <div className='flex -mt-15 ml-0 w-full'>
           <FileSelector
             label="Ссылка на файл разреза"
             value={editedElement.cwDrawingPath}
@@ -286,7 +294,7 @@ function App() {
             isChanged={editedElement.cwDrawingPath !== currentElement.cwDrawingPath}
             layout="top"
             placeholder="Путь к файлу"
-            inputClassName="w-96"
+            inputClassName="w-109"
             onBrowse={async () => {
               const requestId = crypto.randomUUID(); // строка, уникальный идентификатор
               // Отправляем команду в WPF и ждём ответа
@@ -296,6 +304,10 @@ function App() {
               });
             }}
           />
+          
+        </div>
+        <div className="mt-1 p-2 border border-gray-300 rounded bg-gray-50 min-w-[400px] flex">
+          <LabelValue label="Создан:" value={currentElement?.createDate ?? '—'} ></LabelValue>
         </div>
       </div>
     </ElementContext.Provider>

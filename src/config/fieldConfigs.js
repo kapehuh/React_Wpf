@@ -8,17 +8,18 @@ import { getUnitOptions, isValidUnit } from '../actions/unitUtils';
 // это статическая конфигурация поля
 export const fieldConfigs = {
   direction: {
-    label: 'Направление разреза',
+    label: 'Открытая часть',
     getOptions: (value, originalValue) => getCwRpathYdirOptions(value, originalValue),
-    isDisabled: (originalValue) => !iscwRpathYdirAttributePresent(originalValue),
-    layout: 'top',
+    isDisabled: () => true,
+    //isDisabled: (originalValue) => !iscwRpathYdirAttributePresent(originalValue),
+    layout: 'left',
   },
   direction_top: {
-    label: 'Открытая часть',
+    label: 'Направление',
     getOptions: (value, originalValue) => getDirectionOptions(value, originalValue),
-    // isDisabled: (originalValue) => !iscwDDIRAttributePresent(originalValue),
-    isDisabled: () => true,
-    layout: 'left',
+    isDisabled: (originalValue) => !iscwDDIRAttributePresent(originalValue),
+    //isDisabled: () => true,
+    layout: 'top',
   },
   jusLine: {
     // Горизонтально
