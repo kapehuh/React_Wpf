@@ -26,6 +26,7 @@ const LabelInputButton = ({
     buttonTitle,
     isSuccess = false,
     isSaveDisabled = false,
+    errorMessage = null,
   }) => {
     // Формируем title по умолчанию, если buttonTitle не передан
     const defaultTitle = actionType === 'copy' ? 'Копировать в буфер обмена' : 'Сохранить изменения';
@@ -79,8 +80,11 @@ const LabelInputButton = ({
               <div className="absolute top-0 right-full mr-2 bg-gray-500 text-white text-xs px-2 py-2 rounded whitespace-nowrap z-20">
                 Скопировано!
               </div>
-            )}
+            )}    
           </span>
+        </div>
+        <div className="h-1 mt-0 ml-24">
+          {errorMessage && <div className="text-red-500 text-sm">{errorMessage}</div>}
         </div>
     </div>
   );

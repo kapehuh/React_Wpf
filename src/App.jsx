@@ -95,31 +95,14 @@ function App() {
             pendingRequests.delete(parsed.request_id);
           }
         }
-        // ============================================================ ответ от WPF о результатах переименования
-        // if (parsed.action === 'renameResult') {
-        //   if (parsed.success) {
-        //     // Обновляем currentElement и editedElement
-        //     setCurrentElement(parsed.element);
-        //     setEditedElement({ ...parsed.element });
-        //     // Включаем зелёную подсветку на 1 секунду
-        //     setRenameSuccess(true);
-        //     setTimeout(() => setRenameSuccess(false), 1000);
-        //   } else {
-        //     // Показываем ошибку
-        //     setRenameError(parsed.message || 'Ошибка переименования');
-        //     setTimeout(() => setRenameError(null), 3000);
-        //   }
-        // }
         // ============================================================ ответ от WPF о результатах внесения изменений
         if (parsed.action === 'updateResult') {
           if (parsed.success) {
-            // Обновляем currentElement и editedElement
             setCurrentElement(parsed.element);
             setEditedElement({ ...parsed.element });
-            // Очищаем ошибки
-            setNameError(null);
+            setNameError(null); // Очищаем ошибки
             setRenameError(null);
-            setRenameSuccess(true); // включаем зелёную подсветку на 1 секунду
+            setRenameSuccess(true); // Включаем зелёную подсветку на 1 секунду
             setTimeout(() => setRenameSuccess(false), 1000);
           } else {
             setRenameError(parsed.message || 'Ошибка сохранения');
@@ -208,7 +191,7 @@ function App() {
   // Вычисляем состояние кнопки Rename
   const isNameChanged = editedElement?.Name !== currentElement?.Name;
   const isSaveDisabled = !isNameChanged || !!nameError;
-
+  const isFormValid = !nameError; //проверка для кнопки "Сохранить"
 
   if (!currentElement || !editedElement) {
     return <div className="p-4">Загрузка данных элемента...</div>;
@@ -220,7 +203,7 @@ function App() {
     <ElementContext.Provider value={currentElement}>
       <div className="p-4 space-y-1 min-w-[500px] overflow-x-auto">
         <TrackCE onTrackingChange={handleTrackingChange} initialChecked={true} />
-        <div className="mt-2 p-3 border border-gray-300 rounded bg-gray-50">
+        <div className="mt-1 p-3 border border-gray-300 rounded bg-gray-50">
           <LabelInputButton
           label="Name"
           value={editedElement?.Name ?? ''}
@@ -235,6 +218,7 @@ function App() {
           isSaveDisabled={
             isSaveDisabled 
           }
+          errorMessage={nameError || renameError}
           />
         </div>
         <div className="mt-1 ml-1 p-2">
@@ -399,22 +383,22 @@ function App() {
         <div className="mt-1 p-2 border border-gray-300 rounded bg-gray-50 min-w-[400px] flex">
           <LabelValue label="Создан:" value={currentElement?.createDate ?? '—'} ></LabelValue>
         </div>
-      </div>
-      {/* ================================================================================================= сохранить / отмена */}
-      <div className="flex justify-end gap-3 mt-0 pt-2 pb-2 mr-4">
-        <button
-          onClick={handleCancel}
-          className="px-4 py-1 border border-gray-300 rounded text-gray-700 hover:bg-gray-100"
-        >
-          Отмена
-        </button>
-        <button
-          onClick={handleSaveAll}
-          disabled={Object.keys(changes).length === 0}
-          className="px-4 py-1 bg-green-700 text-white rounded opacity-85 hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Сохранить
-        </button>
+        {/* ================================================================================================= сохранить / отмена */}
+        <div className="flex justify-end gap-3 mt-3 pt-1 pb-2 mr-0">
+          <button
+            onClick={handleCancel}
+            className="px-4 py-1 border border-gray-300 rounded text-gray-700 hover:bg-gray-100"
+          >
+            Отмена
+          </button>
+          <button
+            onClick={handleSaveAll}
+            disabled={Object.keys(changes).length === 0 || !isFormValid}
+            className="px-4 py-1 bg-green-700 text-white rounded opacity-85 hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Сохранить
+          </button>
+        </div>
       </div>
     </ElementContext.Provider>
   );
