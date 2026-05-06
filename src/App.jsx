@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { ElementContext } from './contexts/ElementContext';
 import TrackCE from './components/TrackCE';
 import CopyIcon from './components/CopyIcon';
@@ -9,7 +9,9 @@ import FileSelector from './components/FileSelector';
 import WeightWithUnit from './components/WeightWithUnitInputSelect';
 import LabelInputButton from './components/LabelInputButton';
 import { sendToWPF } from './actions/SendMsgByHostObjects';
+import { validateName } from './actions/validationUtils';
 import { fieldConfigs  } from './config/fieldConfigs';
+import { editableFields } from './config/editableFields';
 import { useFieldSelect } from './hooks/hookFieldSelect';
 
 
@@ -31,7 +33,10 @@ function App() {
   // Локальная копия для редактирования
   const [editedElement, setEditedElement] = useState(null);
   const [trackingEnabled, setTrackingEnabled] = useState(true); //синхронизация с чекбоксом, дублер состояния
-  const pendingRequests = useRef(new Map());
+  const pendingRequests = useRef(new Map()); // для resolve идентификации входящих сообщений от wpf
+  const [renameSuccess, setRenameSuccess] = useState(false);    //Успешное переименование
+  const [renameError, setRenameError] = useState(null);         //Неуспешное переименование
+  const [nameError, setNameError] = useState(null);             //Состояние ошибки имени
 
 
   // use_EFFECT эффекты
@@ -50,8 +55,24 @@ function App() {
   useEffect(() => {
     if (currentElement) {
       setEditedElement({...currentElement});
+      setNameError(null); // сбрасываем ошибку при получении нового элемента
+      setRenameError(null);
     }
   }, [currentElement]);
+
+
+  // объект changes (только изменённые поля) после того, как editedElement и currentElement определены:
+  const changes = useMemo(() => {
+    if (!editedElement || !currentElement) return {};
+    const result = {};
+    // перебор изменяемых полей из editableFields.js
+    for (const key of editableFields) {
+      if (editedElement[key] !== currentElement[key]) {
+        result[key] = editedElement[key];
+      }
+    }
+    return result;
+  }, [editedElement, currentElement]);
 
 
   // Подписка на входящие сообщения WPF (через postMessage)
@@ -62,15 +83,55 @@ function App() {
       try {
         const parsed = typeof message === 'string' ? JSON.parse(message) : message;
         if (parsed.action === 'elementChanged' && parsed.payload) {
+          console.log('elementChanged payload:', parsed.payload);
           setCurrentElement(parsed.payload);
         }
-        // 'selectedFile' - отправляет WPF как команду и 'request_id' как идентификатор для resolve
+        // ============================================================ ответ от WPF путь к выбранному файлу
+        // ============================================================ 'selectedFile' - выбранный файл от WPF и 'request_id' как идентификатор для resolve
         if (parsed.action === 'selectedFile') {
           const resolve = pendingRequests.current.get(parsed.request_id);
           if (resolve) {
             resolve(parsed.path ?? null);
             pendingRequests.delete(parsed.request_id);
           }
+        }
+        // ============================================================ ответ от WPF о результатах переименования
+        // if (parsed.action === 'renameResult') {
+        //   if (parsed.success) {
+        //     // Обновляем currentElement и editedElement
+        //     setCurrentElement(parsed.element);
+        //     setEditedElement({ ...parsed.element });
+        //     // Включаем зелёную подсветку на 1 секунду
+        //     setRenameSuccess(true);
+        //     setTimeout(() => setRenameSuccess(false), 1000);
+        //   } else {
+        //     // Показываем ошибку
+        //     setRenameError(parsed.message || 'Ошибка переименования');
+        //     setTimeout(() => setRenameError(null), 3000);
+        //   }
+        // }
+        // ============================================================ ответ от WPF о результатах внесения изменений
+        if (parsed.action === 'updateResult') {
+          if (parsed.success) {
+            // Обновляем currentElement и editedElement
+            setCurrentElement(parsed.element);
+            setEditedElement({ ...parsed.element });
+            // Очищаем ошибки
+            setNameError(null);
+            setRenameError(null);
+            setRenameSuccess(true); // включаем зелёную подсветку на 1 секунду
+            setTimeout(() => setRenameSuccess(false), 1000);
+          } else {
+            setRenameError(parsed.message || 'Ошибка сохранения');
+            setTimeout(() => setRenameError(null), 3000);
+          } 
+            // Показываем ошибку
+            //setRenameError(parsed.message || 'Ошибка сохранения');
+            //setTimeout(() => setRenameError(null), 3000);
+        }
+        // ============================================================ ответ от WPF ошибка
+        if (parsed.action === 'openFileError') {
+          //alert(parsed.message);
         }
       } catch (e) {
         console.warn('Failed to parse message received from WPF', e);
@@ -93,27 +154,48 @@ function App() {
   }, []);
 
 
-  // Заглушка изменения имени DbElement (отправки в WPF)
-  const handleFieldSave = (fieldKey, newValue) => {
-    console.log(`[Заглушка] Сохранить ${fieldKey} = ${newValue}`);
-    if (!currentElement) return;
-    const originalValue = currentElement[fieldKey];
-    if (originalValue === newValue) {
-      console.log(`Поле ${fieldKey} не изменилось`);
-      return;
-    }
-    console.log(`Сохраняем ${fieldKey}: "${originalValue}" → "${newValue}"`);
-    // TODO: отправить в WPF
-    // sendToWPF('renameElement', { newName: newValue });
-  };
-
 
   // Обновление поля (печатает пользователь)
   const handleFieldChange = (fieldKey, newValue) => {
+    console.log(`🟢 handleFieldChange: ${fieldKey} =`, newValue, typeof newValue);
     setEditedElement(prev => ({
       ...prev,
       [fieldKey]: newValue
     }));
+    // проверка для поля Name, чтобы сообщить пользователю
+    if (fieldKey === 'Name') {
+      const error = validateName(newValue);
+      setNameError(error);
+    }
+  };
+
+
+  // ФУНКЦИЯ ПЕРЕИМЕНОВАНИЯ
+  // ===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===
+  const handleRename = () => {
+    // console.log('🔵 handleRename вызван с именем:', newName);
+    const newName = editedElement.Name;
+    if (newName === currentElement.Name) return;
+    const error = validateName(newName);
+    if (error) {
+      setNameError(error);
+      return;
+    }
+    sendToWPF('updateElement', { changes: { Name: newName } });
+  };
+  // ФУНКЦИЯ ДЛЯ ОТПРАВКИ ОБНОВЛЕНИЯ
+  // ===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===
+  const handleSaveAll = () => {
+    if (Object.keys(changes).length === 0) return; // ничего не изменилось
+    sendToWPF('updateElement', { changes });
+  };
+  // СБРОСИТЬ изменения
+  // ===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===
+  const handleCancel = () => {
+    setEditedElement({ ...currentElement });
+    setNameError(null);
+    setRenameError(null);
+    // сбросить другие ошибки
   };
 
 
@@ -123,6 +205,9 @@ function App() {
   const cwDDIRField = useFieldSelect('cwDDIR', editedElement, currentElement, fieldConfigs.direction_top, handleFieldChange);
   const jusLineField = useFieldSelect('cwJusLine', editedElement, currentElement, fieldConfigs.jusLine, handleFieldChange);
   const vShapeField = useFieldSelect('vShape', editedElement, currentElement, fieldConfigs.vShape, handleFieldChange);
+  // Вычисляем состояние кнопки Rename
+  const isNameChanged = editedElement?.Name !== currentElement?.Name;
+  const isSaveDisabled = !isNameChanged || !!nameError;
 
 
   if (!currentElement || !editedElement) {
@@ -130,6 +215,7 @@ function App() {
   }
   
 
+  // RENDERING
   return (
     <ElementContext.Provider value={currentElement}>
       <div className="p-4 space-y-1 min-w-[500px] overflow-x-auto">
@@ -139,11 +225,16 @@ function App() {
           label="Name"
           value={editedElement?.Name ?? ''}
           onChange={(val) => handleFieldChange('Name', val)}
-          onSave={(val) => handleFieldSave('Name', val)}
+          onSave={handleRename}
           buttonLabel="Rename"
           actionType="save"
           isChanged={editedElement.Name !== currentElement.Name}
           buttonTitle="Переименовать текущий элемент"
+          isSuccess={renameSuccess}
+          // Проверка, активна ли кнопка: есть изменения и имя валидно
+          isSaveDisabled={
+            isSaveDisabled 
+          }
           />
         </div>
         <div className="mt-1 ml-1 p-2">
@@ -211,7 +302,7 @@ function App() {
               disabled={vShapeField.disabled}
               inputClassName="w-40"
             />
-            <LabelValue 
+            <LabelValue
               label="Отметка:" 
               value={
                 currentElement?.zPos && currentElement.zPos !== '' && !isNaN(Number(currentElement.zPos))
@@ -304,11 +395,26 @@ function App() {
               });
             }}
           />
-          
         </div>
         <div className="mt-1 p-2 border border-gray-300 rounded bg-gray-50 min-w-[400px] flex">
           <LabelValue label="Создан:" value={currentElement?.createDate ?? '—'} ></LabelValue>
         </div>
+      </div>
+      {/* ================================================================================================= сохранить / отмена */}
+      <div className="flex justify-end gap-3 mt-0 pt-2 pb-2 mr-4">
+        <button
+          onClick={handleCancel}
+          className="px-4 py-1 border border-gray-300 rounded text-gray-700 hover:bg-gray-100"
+        >
+          Отмена
+        </button>
+        <button
+          onClick={handleSaveAll}
+          disabled={Object.keys(changes).length === 0}
+          className="px-4 py-1 bg-green-700 text-white rounded opacity-85 hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Сохранить
+        </button>
       </div>
     </ElementContext.Provider>
   );

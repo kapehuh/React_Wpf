@@ -24,73 +24,68 @@ const LabelInputButton = ({
     buttonClassName = "",  // true → подсветка жёлтым (поле изменено, но не сохранено)
     isChanged = false,    // true → подсветка жёлтым (поле изменено, но не сохранено)
     buttonTitle,
-   }) => {
-
-  // Формируем title по умолчанию, если buttonTitle не передан
-  const defaultTitle = actionType === 'copy' ? 'Копировать в буфер обмена' : 'Сохранить изменения';
-  const finalTitle = buttonTitle !== undefined ? buttonTitle : defaultTitle;
-  
+    isSuccess = false,
+    isSaveDisabled = false,
+  }) => {
+    // Формируем title по умолчанию, если buttonTitle не передан
+    const defaultTitle = actionType === 'copy' ? 'Копировать в буфер обмена' : 'Сохранить изменения';
+    const finalTitle = buttonTitle !== undefined ? buttonTitle : defaultTitle;
     // Используем хук для копирования
-  const { copy, showTooltip } = useCopyToClipboard();
-  
-  // Обработчик кнопки
-  const handleButtonClick = () => {
-    if (actionType === 'copy') {
-      handleCopy();
-    } else if (actionType === 'save') {
-      handleSave();
+    const { copy, showTooltip } = useCopyToClipboard();
+    // Обработчик копирования – просто вызываем хук
+    const handleCopy = () => copy(value);
+    const handleSave = () => { if (onSave) onSave(value); };
+
+    
+    // Определяем классы для инпута
+    let inputClasses = "flex-1 border rounded px-2 py-1 text-sm ";
+    if (isSuccess) {
+      inputClasses += "border-green-500 bg-green-50 ";
+    } else if (isChanged) {
+      inputClasses += "border-yellow-500 bg-yellow-50 ";
+    } else {
+      inputClasses += "border-gray-300 ";
     }
-  };
-  
-  // Обработчик копирования – просто вызываем хук
-  const handleCopy = () => {
-    copy(value);
-  };
-  
-  // Обработчик сохранения 
-  const handleSave = () => {
-    if (onSave) onSave(value);
-  };
+    if (readOnly) {
+      inputClasses += "bg-gray-100 cursor-default focus:outline-none focus:ring-0 ";
+    } else {
+      inputClasses += "bg-white hover:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 ";
+    }
+    
 
-  
-
-  return (
-    <div className="flex items-center gap-3 mb-0">
-      <label className={"w-20 font-semibold text-gray-700 select-none"}>{label}:</label>
-      
-      <input
-        type="text"
-        value={value ?? ''}
-        onChange={(e) => onChange && onChange(e.target.value)}
-        readOnly={readOnly}
-        className={`flex-1 border rounded px-2 py-1 text-sm
-          ${isChanged ? 'border-yellow-500 bg-yellow-50' : 'border-gray-300'}
-          ${readOnly 
-            ? 'bg-gray-100 cursor-default focus:outline-none focus:ring-0' 
-            : 'bg-white hover:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500'
-          }
-        `}
-      />
-      <span className="relative">
-        <button
-          onClick={handleButtonClick}
-          title={finalTitle}
-          className={`px-4 py-1.5 rounded text-sm flex items-center gap-1 ${
-            actionType === 'copy' 
-              ? 'bg-blue-500 hover:bg-blue-600' 
-              : 'bg-blue-500 hover:bg-blue-600'
-          } text-white ${buttonClassName}`}>
-          {buttonIcon && <span className="w-5 h-5 flex-shrink-0">{buttonIcon}</span>}
-          <span>{buttonLabel}</span>
-        </button>
-        {showTooltip && (
-          <div className="absolute top-0 right-full mr-2 bg-gray-500 text-white text-xs px-2 py-2 rounded whitespace-nowrap z-20">
-            Скопировано!
-          </div>
-        )}
-      </span>
+    
+    return (
+      <div>
+        <div className="flex items-center gap-3 mb-0">
+          <label className={"w-20 font-semibold text-gray-700 select-none"}>{label}:</label>
+          
+          <input
+            type="text"
+            value={value ?? ''}
+            onChange={(e) => onChange && onChange(e.target.value)}
+            readOnly={readOnly}
+            className={inputClasses.trim()}
+          />
+          <span className="relative">
+            <button
+              onClick={actionType === 'copy' ? handleCopy : handleSave}
+              disabled={isSaveDisabled}
+              title={finalTitle}
+              className={`px-4 py-1.5 rounded text-sm flex items-center gap-1 bg-blue-500 opacity-95 hover:bg-blue-600 text-white disabled:bg-gray-400 disabled:opacity-100 disabled:cursor-default ${buttonClassName}`}>
+              {buttonIcon && <span className="w-5 h-5 flex-shrink-0">{buttonIcon}</span>}
+              <span>{buttonLabel}</span>
+            </button>
+            {showTooltip && (
+              <div className="absolute top-0 right-full mr-2 bg-gray-500 text-white text-xs px-2 py-2 rounded whitespace-nowrap z-20">
+                Скопировано!
+              </div>
+            )}
+          </span>
+        </div>
     </div>
   );
 };
+
+
 
 export default LabelInputButton;

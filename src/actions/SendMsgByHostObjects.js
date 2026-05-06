@@ -21,6 +21,9 @@ export const sendToWPF = (action, payload = {}) => {
 
 
 
+
+
+
 // ПРИМЕР:
 //     const formData = {
 //       name: 'Балка 1',

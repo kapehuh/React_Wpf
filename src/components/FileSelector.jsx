@@ -1,5 +1,6 @@
 // src/components/FileSelector.jsx
 import React, { useState, useEffect, useRef } from 'react';
+import { sendToWPF } from '../actions/SendMsgByHostObjects';
 
 /**
  * Компонент выбора файла: поле (readonly, стилизовано под ссылку) + кнопка "Обзор...".
@@ -73,8 +74,8 @@ const FileSelector = ({
   const handleOpen = () => {
     if (disabled || isMissing || !localValue) return;
     // Отправляем команду в WPF
-    console.log(`[Заглушка] openFile ${ localValue }`);
-    //sendToWPF('openFile', { path: localValue });
+    //console.log(`[Заглушка] openFile ${ localValue }`);
+    sendToWPF('openFile', { path: localValue });
   };
 
 
@@ -87,14 +88,14 @@ const FileSelector = ({
   `;
 
   const buttonClasses = `
-    px-3 py-1 rounded text-sm bg-blue-500 hover:bg-blue-600 text-white
+    px-3 py-1 rounded text-sm bg-blue-500 opacity-95 hover:bg-blue-600 text-white
     ${disabled || isMissing ? 'opacity-50 cursor-not-allowed' : ''}
   `;
 
   const inputElement = (
     <div className="flex items-center gap-2 flex-1 position: relative w-full">
       <input
-        title={localValue}
+        title={`Выбрать файл: ${localValue}`.trim()}
         type="text"
         value={localValue}
         readOnly
