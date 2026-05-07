@@ -117,13 +117,7 @@ const LabelInput = ({
   `;
 
   // Определяем, что показывать в поле
-  let inputValue;
-  if (numeric || blockOnEmpty) {
-    inputValue = localValue;
-  } else {
-    inputValue = value ?? '';
-  }
-
+  const inputValue = (numeric || blockOnEmpty) ? localValue : (value ?? '');
   // Определяем плейсхолдер для числового режима при отсутствии атрибута
   const finalPlaceholder = isMissing ? '- Не задано -' : placeholder;
 

@@ -12,7 +12,7 @@ export const isVShapeAttributePresent = (value) => value === '0' || value === '1
 
 // Возвращает опции для комбобокса, добавляя произвольное значение, если нужно
 export const getVShapeOptions = (currentValue, originalValue) => {
-  if (originalValue === '2') {
+  if (originalValue == null || originalValue === '2') {
     return [VSHAPE_OPTIONS.absent];
   }
   return [VSHAPE_OPTIONS.rectangle, VSHAPE_OPTIONS.circle];
