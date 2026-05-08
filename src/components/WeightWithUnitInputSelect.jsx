@@ -1,18 +1,28 @@
 // src/components/WeightWithUnitInputSelect.jsx (валидация с пробросом ошибки)
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import LabelInput from './LabelInput';
 import LabelSelect from './LabelSelect';
 import { getUnitOptions } from '../actions/unitUtils';
 
 const WeightWithUnit = ({ value, originalValue, onChange, onValidation }) => {
-  const parseWeight = (str) => {
-    if (!str || str === '') return { number: '', unit: '' };
-    const parts = str.trim().split(/\s+/);
+  // безопасный парсинг: обрабатывает null, undefined, числа и строки
+  const parseWeight = (raw) => {
+    if (raw == null || raw === '') return { number: '', unit: '' };
+    // если передали число, превращаем в строку
+    if (typeof raw !== 'string') {
+      raw = String(raw);
+    }
+    const str = raw.trim();
+    if (str === '') return { number: '', unit: '' };
+    const parts = str.split(/\s+/);
     if (parts.length === 1) return { number: parts[0], unit: '' };
     const number = parts[0];
     const unit = parts.slice(1).join(' ');
     return { number, unit };
   };
+
+  // разбираем исходное значение один раз
+  const originalParsed = useMemo(() => parseWeight(originalValue), [originalValue]);
 
   const [numberValue, setNumberValue] = useState('');
   const [unitValue, setUnitValue] = useState('');
@@ -31,15 +41,22 @@ const WeightWithUnit = ({ value, originalValue, onChange, onValidation }) => {
     }
   }, [value]);
 
+  // проверка валидности числа – только когда значение реально изменилось
   useEffect(() => {
-    // Оповещаем родителя о валидности (если поле не заблокировано)
-    if (!isMissing) {
-      const valid = numberValue.trim() !== '' && !isNaN(Number(numberValue));
-      onValidation?.(!valid ? 'Введите число' : null);
-    } else {
+    const missing = !value || value === '';
+    if (missing) {
       onValidation?.(null);
+      return;
     }
-  }, [numberValue, isMissing, onValidation]);
+    // если не менялось – ошибок нет
+    if (numberValue === originalParsed.number && unitValue === originalParsed.unit) {
+      onValidation?.(null);
+      return;
+    }
+    // если изменилось – проверяем
+    const valid = numberValue.trim() !== '' && !isNaN(Number(numberValue));
+    onValidation?.(!valid ? 'Введите число' : null);
+  }, [numberValue, unitValue, value, originalParsed, onValidation]);
 
   const isChanged = value !== originalValue;
 
@@ -62,13 +79,13 @@ const WeightWithUnit = ({ value, originalValue, onChange, onValidation }) => {
         <LabelInput
           label="Нагрузка"
           value={numberValue}
-          originalValue={parseWeight(originalValue).number}
+          originalValue={originalParsed.number}
           onChange={(newNumber) => {
             const newWeight = newNumber && unitValue ? `${newNumber} ${unitValue}` : (newNumber || '');
             onChange(newWeight);
           }}
           numeric={true}
-          isChanged={numberValue !== parseWeight(originalValue).number}
+          isChanged={numberValue !== originalParsed.number}
           inputClassName="w-35"
           placeholder="число"
         />
@@ -82,7 +99,7 @@ const WeightWithUnit = ({ value, originalValue, onChange, onValidation }) => {
             const newWeight = numberValue && newUnit ? `${numberValue} ${newUnit}` : (numberValue || '');
             onChange(newWeight);
           }}
-          isChanged={unitValue !== parseWeight(originalValue).unit}
+          isChanged={unitValue !== originalParsed.unit}
           disabled={false}
           layout="left"
           labelClassName="w-20"

@@ -33,7 +33,6 @@ const FileSelector = ({
   const fileInputRef = useRef(null);
   const [localValue, setLocalValue] = useState(value || '');
   const isMissing = blockOnEmpty && (!value || value === '');
-  const [showTooltip, setShowTooltip] = useState(false);
 
 
   useEffect(() => {
@@ -72,37 +71,56 @@ const FileSelector = ({
     ${disabled || isMissing ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}
   `;
 
+  const buttonClasses = `
+    px-3 py-1 rounded text-sm bg-blue-500 opacity-95 hover:bg-blue-600 text-white
+    ${disabled || isMissing ? 'opacity-50 cursor-not-allowed' : ''}
+  `;
+
+  const inputElement = (
+    <div className="flex items-center gap-2 flex-1 relative w-full">
+      <input
+        type="text"
+        value={localValue}
+        readOnly
+        onClick={handleBrowse}
+        placeholder={isMissing ? 'не задан' : placeholder}
+        className={`flex-1 ${baseInputClasses} ${inputClassName}`.trim()}
+        title={`Выбрать файл: ${localValue || placeholder}`}   // стандартный title
+      />
+      {!onBrowse && (
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={(e) => {
+            const file = e.target.files[0];
+            if (file) {
+              const path = file.path || file.name;
+              setLocalValue(path);
+              onChange(path);
+            }
+            e.target.value = '';
+          }}
+          style={{ display: 'none' }}
+        />
+      )}
+      <button
+        onClick={handleOpen}
+        disabled={disabled || isMissing}
+        className={buttonClasses}
+        title="Открыть в AutoCad/NanoCad"
+      >
+        Открыть в ...
+      </button>
+    </div>
+  );
+
 
   return (
     <div className={layout === 'top' ? 'mb-3 w-full' : 'flex items-center gap-3'}>
-      <label className={`font-semibold text-gray-700 select-none ml-1 ${layout === 'top' ? 'block mb-1' : 'w-25'}`}>{label}:</label>
-      <div className="flex items-center gap-2 flex-1 relative w-full">
-        <input
-          type="text"
-          value={localValue}
-          readOnly
-          onClick={handleBrowse}
-          onMouseEnter={() => { if (localValue) setShowTooltip(true); }}
-          onMouseLeave={() => setShowTooltip(false)}
-          placeholder={isMissing ? 'не задан' : placeholder}
-          className={`flex-1 ${baseInputClasses} ${inputClassName}`.trim()}
-        />
-        {showTooltip && localValue && (
-          <div className="absolute z-10 bg-gray-700 text-white text-xs rounded px-2 py-1 whitespace-nowrap" style={{ bottom: '100%', left: 0, marginBottom: 4 }}>
-            {localValue}
-          </div>
-        )}
-        {!onBrowse && <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={(e) => {
-          const file = e.target.files[0];
-          if (file) {
-            const path = file.path || file.name;
-            setLocalValue(path);
-            onChange(path);
-          }
-          e.target.value = '';
-        }} />}
-        <button onClick={handleOpen} disabled={disabled || isMissing} className={`px-3 py-1 rounded text-sm bg-blue-500 opacity-95 hover:bg-blue-600 text-white ${disabled || isMissing ? 'opacity-50 cursor-not-allowed' : ''}`}>Открыть в ...</button>
-      </div>
+      <label className={`font-semibold text-gray-700 select-none ml-1 ${layout === 'top' ? 'block mb-1' : 'w-25'}`}>
+        {label}:
+      </label>
+      {inputElement}
     </div>
   );
 };

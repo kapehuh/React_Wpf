@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import Toast from './components/Toast';
 import TrackCE from './components/TrackCE';
 import CopyIcon from './components/CopyIcon';
 import LabelValue from './components/LabelValue';
@@ -35,6 +36,8 @@ function App() {
   const [renameError, setRenameError] = useState(null);         // Неуспешное переименование
   const [nameError, setNameError] = useState(null);             // Состояние ошибки имени
   const [weightError, setWeightError] = useState(null);         // Ошибка нагрузка ?
+  const [fieldErrors, setFieldErrors] = useState({});           // 
+  const [genericError, setGenericError] = useState(null);       // 
 
   const isWebView = !!window.chrome?.webview;
 
@@ -46,6 +49,8 @@ function App() {
     setRenameError,
     setRenameSuccess,
     setWeightError,
+    setFieldErrors,
+    setGenericError,
   });
 
   // use_EFFECT эффекты
@@ -94,9 +99,15 @@ function App() {
     //console.log(`🟢 handleFieldChange: ${fieldKey} =`, newValue, typeof newValue);
     setEditedElement(prev => ({ ...prev, [fieldKey]: newValue }));
     if (fieldKey === 'Name') {
-      setNameError(validateName(newValue));
+      const originalName = currentElement?.Name;
+      //если значение вернулось к исходному - не валидировать
+      if (newValue === originalName) {
+        setNameError(null);
+      } else {
+        setNameError(validateName(newValue));
+      }
     }
-  }, []);
+  }, [currentElement?.Name]);
 
 
   // ФУНКЦИЯ ПЕРЕИМЕНОВАНИЯ
@@ -126,6 +137,7 @@ function App() {
     setNameError(null);
     setRenameError(null);
     setWeightError(null);
+    setFieldErrors({});
   }, [currentElement]);
 
 
@@ -161,7 +173,7 @@ function App() {
           buttonTitle="Переименовать текущий элемент"
           isSuccess={renameSuccess}
           isSaveDisabled={isSaveDisabled}
-          errorMessage={nameError || renameError}
+          errorMessage={nameError || renameError || fieldErrors.Name}
         />
       </div>
       <div className="mt-1 ml-1 p-2">
@@ -200,6 +212,7 @@ function App() {
               isChanged={editedElement.vHeig !== currentElement.vHeig}
               inputClassName="w-36"
               placeholder="Высота"
+              error={fieldErrors.vHeig}
             />
           </div>
           <div className='mt-1 -ml-1 whitespace-nowrap'>
@@ -212,6 +225,7 @@ function App() {
               isChanged={editedElement.vWidth !== currentElement.vWidth}
               inputClassName="w-36"
               placeholder="Ширина"
+              error={fieldErrors.vWidth}
             />
           </div>
         </div>
@@ -225,6 +239,7 @@ function App() {
             isChanged={vShapeField.isChanged}
             disabled={vShapeField.disabled}
             inputClassName="w-40"
+            error={fieldErrors.vShape}
           />
           <LabelValue
             label="Отметка:"
@@ -246,6 +261,7 @@ function App() {
               isChanged={jusLineField.isChanged}
               disabled={jusLineField.disabled}
               inputClassName="w-40"
+              error={fieldErrors.cwJusLine}
             />
           </div>
           <div className="mt-1">
@@ -258,6 +274,8 @@ function App() {
               isChanged={rPathYdirField.isChanged}
               disabled={rPathYdirField.disabled}
               inputClassName="w-40"
+              error={fieldErrors.cwRpathYdir}
+
             />
           </div>
         </div>
@@ -272,6 +290,7 @@ function App() {
             isChanged={editedElement.cwDNAM !== currentElement.cwDNAM}
             inputClassName="w-62"
             placeholder="Разрез"
+            error={fieldErrors.cwDNAM}
           />
         </div>
         <div className="mt-1 ml-15 col-start-2 row-start-3 whitespace-nowrap">
@@ -284,6 +303,7 @@ function App() {
             isChanged={cwDDIRField.isChanged}
             disabled={cwDDIRField.disabled}
             inputClassName="w-40"
+            error={fieldErrors.cwDDIR}
           />
         </div>
         <div className="-ml-2 -mt-5 col-span-2 row-start-4 whitespace-nowrap">
@@ -295,7 +315,7 @@ function App() {
           />
         </div>
       </div>
-      <div className='flex -mt-15 ml-0 w-full'>
+      <div className='flex -mt-17 ml-0 w-full'>
         <FileSelector
           label="Ссылка на файл разреза"
           value={editedElement.cwDrawingPath}
@@ -304,7 +324,7 @@ function App() {
           blockOnEmpty={true}
           isChanged={editedElement.cwDrawingPath !== currentElement.cwDrawingPath}
           layout="top"
-          placeholder="Путь к файлу"
+          placeholder="путь к файлу"
           inputClassName="w-109"
           onBrowse={() => requestFile(crypto.randomUUID())}
         />
@@ -313,6 +333,8 @@ function App() {
         <LabelValue label="Создан:" value={currentElement?.createDate ?? '—'} />
       </div>
       <div className="flex justify-end gap-3 mt-3 pt-1 pb-2 mr-0">
+        {/* Тост для общих ошибок */}
+        <Toast message={genericError} onClose={() => setGenericError(null)} />
         <button onClick={handleCancel} className="px-4 py-1 border border-gray-300 rounded text-gray-700 hover:bg-gray-100">Отмена</button>
         <button
           onClick={handleSaveAll}

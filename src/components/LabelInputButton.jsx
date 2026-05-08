@@ -54,12 +54,16 @@ const LabelInputButton = ({
     }
     
 
-    
+    const errorTooltip = errorMessage ? (
+      <div className="absolute left-0 top-full mt-1 z-20 bg-red-600 text-white text-xs rounded px-2 py-1 whitespace-nowrap shadow-lg">
+        {errorMessage}
+      </div>
+    ) : null;
+
     return (
-      <div>
-        <div className="flex items-center gap-3 mb-0">
-          <label className={"w-20 font-semibold text-gray-700 select-none"}>{label}:</label>
-          
+      <div className="flex items-center gap-3 mb-0">
+        <label className="w-20 font-semibold text-gray-700 select-none">{label}:</label>
+        <div className="relative flex items-center gap-2 flex-1">
           <input
             type="text"
             value={value ?? ''}
@@ -72,7 +76,8 @@ const LabelInputButton = ({
               onClick={actionType === 'copy' ? handleCopy : handleSave}
               disabled={isSaveDisabled}
               title={finalTitle}
-              className={`px-4 py-1.5 rounded text-sm flex items-center gap-1 bg-blue-500 opacity-95 hover:bg-blue-600 text-white disabled:bg-gray-400 disabled:opacity-100 disabled:cursor-default ${buttonClassName}`}>
+              className={`px-4 py-1.5 rounded text-sm flex items-center gap-1 bg-blue-500 opacity-95 hover:bg-blue-600 text-white disabled:bg-gray-400 disabled:opacity-100 disabled:cursor-default ${buttonClassName}`}
+            >
               {buttonIcon && <span className="w-5 h-5 flex-shrink-0">{buttonIcon}</span>}
               <span>{buttonLabel}</span>
             </button>
@@ -82,12 +87,10 @@ const LabelInputButton = ({
               </div>
             )}    
           </span>
+          {errorTooltip}
         </div>
-        <div className="h-1 mt-0 ml-24">
-          {errorMessage && <div className="text-red-500 text-sm">{errorMessage}</div>}
-        </div>
-    </div>
-  );
+      </div>
+    );
 };
 
 

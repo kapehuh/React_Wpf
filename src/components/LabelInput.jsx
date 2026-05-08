@@ -31,9 +31,11 @@ const LabelInput = ({
   inputClassName = '',
   numeric = false,
   blockOnEmpty = false, // блокировать при пустой строке
+  error,
 }) => {
   // Локальное состояние для отображаемого текста (важно для числового режима)
   const [localValue, setLocalValue] = useState('');
+
 
   // Определяем, является ли значение "отсутствующим" (только для числового режима)
   const isMissing = (blockOnEmpty && (value === '' || value === null)) ||
@@ -64,6 +66,7 @@ const LabelInput = ({
     return true;
   };
 
+
   // Обработчик изменения (вызывается при каждом вводе)
   const handleChange = (e) => {
     const raw = e.target.value;
@@ -89,6 +92,7 @@ const LabelInput = ({
     }
   };
 
+
   // Обработчик потери фокуса (только для числового режима)
   const handleBlur = () => {
     if ((!numeric && !blockOnEmpty) || isMissing) return;
@@ -108,6 +112,7 @@ const LabelInput = ({
     }
   };
 
+
   const baseInputClasses = `
     border rounded px-2 py-1 text-sm
     focus:outline-none focus:ring-1 focus:ring-blue-500
@@ -116,37 +121,59 @@ const LabelInput = ({
     ${!disabled && !isMissing ? 'hover:border-blue-500' : ''}
   `;
 
+
   // Определяем, что показывать в поле
   const inputValue = (numeric || blockOnEmpty) ? localValue : (value ?? '');
   // Определяем плейсхолдер для числового режима при отсутствии атрибута
   const finalPlaceholder = isMissing ? '- Не задано -' : placeholder;
 
+
   // Рендер инпута
   const inputElement = (
-    <input
-      type={numeric ? 'text' : type} // числовой режим использует text для ручной валидации
-      value={inputValue}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      disabled={disabled || isMissing}
-      placeholder={finalPlaceholder}
-      className={`${baseInputClasses} ${inputClassName}`.trim()}
-    />
+    <div>
+      <input
+        type={numeric ? 'text' : type} // числовой режим использует text для ручной валидации
+        value={inputValue}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        disabled={disabled || isMissing}
+        placeholder={finalPlaceholder}
+        className={`${baseInputClasses} ${inputClassName}`.trim()}
+      />
+    </div>
+  );
+  // Ошибка с абсолютным позиционированием
+  const errorTooltip = error ? (
+    <div className="absolute left-0 top-full mt-1 z-20 bg-red-600 text-white text-xs rounded px-2 py-1 whitespace-nowrap shadow-lg">
+      {error}
+    </div>
+  ) : null;
+  // Обёртка с relative для позиционирования ошибки
+  const wrappedInput = (
+    <div className="relative inline-block">
+      {inputElement}
+      {errorTooltip}
+    </div>
   );
 
-  // Если метка скрыта – рендерим только инпут
-  if (hideLabel) return <div className="mb-3">{inputElement}</div>;
-  // Расположение метки сверху
+  // Скрытая метка – рендерим только инпут
+  if (hideLabel) return (
+  <div className="mb-3">
+    {wrappedInput}
+  </div>
+  );
+  // Метка сверху
   if (layout === 'top') return (
     <div className="mb-3">
       <label className="block font-semibold text-gray-700 mb-1 select-none ml-1">{label}:</label>
-      {inputElement}
+      {wrappedInput}
     </div>
   );
+  // Метка слева
   return (
     <div className="flex items-center">
       <label className="w-25 font-semibold text-gray-700 select-none">{label}:</label>
-      {inputElement}
+      {wrappedInput}  
     </div>
   );
 };
