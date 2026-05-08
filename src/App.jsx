@@ -155,7 +155,7 @@ function App() {
   if (!currentElement || !editedElement) {
     return <div className="p-4">Загрузка данных элемента...</div>;
   }
-  
+  const saveDisabled = Object.keys(changes).length === 0 || !isFormValid;
 
   // RENDERING
   return (
@@ -338,8 +338,10 @@ function App() {
         <button onClick={handleCancel} className="px-4 py-1 border border-gray-300 rounded text-gray-700 hover:bg-gray-100">Отмена</button>
         <button
           onClick={handleSaveAll}
-          disabled={Object.keys(changes).length === 0 || !isFormValid}
-          className="px-4 py-1 bg-green-700 text-white rounded opacity-85 hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={saveDisabled}
+          className={`px-4 py-1 bg-green-700 text-white rounded 
+              disabled:opacity-50 disabled:cursor-default
+              ${!saveDisabled ? 'hover:bg-green-800' : ''}`}
         >
           Сохранить
         </button>
