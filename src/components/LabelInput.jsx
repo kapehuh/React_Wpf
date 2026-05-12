@@ -37,9 +37,11 @@ const LabelInput = ({
   const [localValue, setLocalValue] = useState('');
 
 
+  const isMissingPlaceholder = blockOnEmpty && (value === '' || value === null);
   // Определяем, является ли значение "отсутствующим" (только для числового режима)
-  const isMissing = (blockOnEmpty && (value === '' || value === null)) ||
-                    (numeric && (value === -1 || value === '-1'));
+  const isMissing = (blockOnEmpty && (value === '' || value === null)) || (numeric && (value === -1 || value === '-1'));
+  const finalPlaceholder = isMissingPlaceholder ? '— Не задано —' : (isMissing && numeric) ? '— Не задано —' : placeholder;
+
 
 
   // Cинхронизации локального значения
@@ -125,7 +127,7 @@ const LabelInput = ({
   // Определяем, что показывать в поле
   const inputValue = (numeric || blockOnEmpty) ? localValue : (value ?? '');
   // Определяем плейсхолдер для числового режима при отсутствии атрибута
-  const finalPlaceholder = isMissing ? '- Не задано -' : placeholder;
+  // const finalPlaceholder = isMissing ? '- Не задано -' : placeholder;
 
 
   // Рендер инпута
@@ -136,7 +138,7 @@ const LabelInput = ({
         value={inputValue}
         onChange={handleChange}
         onBlur={handleBlur}
-        disabled={disabled || isMissing}
+        disabled={disabled}
         placeholder={finalPlaceholder}
         className={`${baseInputClasses} ${inputClassName}`.trim()}
       />

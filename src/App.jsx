@@ -286,7 +286,7 @@ function App() {
             originalValue={currentElement.cwDNAM}
             onChange={(val) => handleFieldChange('cwDNAM', val)}
             layout="top"
-            blockOnEmpty={true}
+            //blockOnEmpty={true}
             isChanged={editedElement.cwDNAM !== currentElement.cwDNAM}
             inputClassName="w-62"
             placeholder="Разрез"
@@ -312,6 +312,7 @@ function App() {
             originalValue={currentElement.cwLoad}
             onChange={(val) => handleFieldChange('cwLoad', val)}
             onValidation={setWeightError}
+            error={fieldErrors.cwLoad}
           />
         </div>
       </div>

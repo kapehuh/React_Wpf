@@ -30,7 +30,7 @@ const LabelSelect = ({
     border rounded px-2 py-1 text-sm
     focus:outline-none focus:ring-1 focus:ring-blue-500
     ${isChanged ? 'border-yellow-500 bg-yellow-50' : 'border-gray-300'}
-    ${disabled ? 'bg-gray-100 cursor-default opacity-70' : 'bg-white'}
+    ${disabled ? 'bg-gray-100 cursor-default opacity-70' : 'bg-white hover:border-blue-500'}
   `;
 
 
