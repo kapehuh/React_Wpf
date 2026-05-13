@@ -9,13 +9,14 @@ import React from 'react';
  * @param {string|number} value - Значение для отображения (если null/undefined, покажет "—")
  */
 
-const LabelValue = ({ label, value }) => {
+const LabelValue = ({ label, value, title }) => {
   const displayValue = value ?? '—';
+  const tooltip = title !== undefined ? title : displayValue;
   return (
     <div className="flex items-center gap-3 h-4 min-w-0 w-full">
       {/* Фиксированная ширина метки */}
-      <label className="w-20 font-semibold text-gray-700 rounded bg-gray-50 select-none flex-shrink-0">{label}</label>
-      <span className="text-gray-600 truncate min-w-0" title={displayValue}>
+      <label className="w-20 font-semibold text-gray-700 rounded bg-gray-50 select-none flex-shrink-0" title={tooltip}>{label}</label>
+      <span className="text-gray-600 truncate min-w-0">
         {displayValue}
       </span>
     </div>

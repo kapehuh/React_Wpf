@@ -156,6 +156,8 @@ function App() {
     return <div className="p-4">Загрузка данных элемента...</div>;
   }
   const saveDisabled = Object.keys(changes).length === 0 || !isFormValid;
+  // состояние кнопки Rename: активно только при изменении и без ошибки имени
+  const isRenameDisabled = !isNameChanged || !!nameError;
 
   // RENDERING
   return (
@@ -172,7 +174,7 @@ function App() {
           isChanged={editedElement.Name !== currentElement.Name}
           buttonTitle="Переименовать текущий элемент"
           isSuccess={renameSuccess}
-          isSaveDisabled={isSaveDisabled}
+          isSaveDisabled={isRenameDisabled}
           errorMessage={nameError || renameError || fieldErrors.Name}
         />
       </div>
@@ -248,6 +250,7 @@ function App() {
                 ? (Number(currentElement.zPos) / 1000).toLocaleString() + ' м'
                 : '—'
             }
+            title="мировая Z-координата нижней точки CWBRAN"
           />
         </div>
         <div className="-ml-23 mt-3 col-start-2 row-start-2">
