@@ -28,6 +28,11 @@ const WeightWithUnit = ({ value, originalValue, onChange, onValidation, error })
   useEffect(() => {
     if (value == null || value === '') {
       setNumberValue('');
+      if (isOriginalAbsent) {
+        // Элемент без атрибута: сбрасываем единицу полностью
+        setUnitValue('');
+        setLastUnit('');
+      }
       // НЕ сбрасываем unitValue и lastUnit, чтобы единица сохранялась
     } else {
       const { number, unit } = parseWeight(value);
@@ -107,7 +112,7 @@ const WeightWithUnit = ({ value, originalValue, onChange, onValidation, error })
               onChange(`${numStr} ${newUnit}`);
             }
           }}
-          isChanged={unitValue !== originalParsed.unit}
+          isChanged={shouldDisable ? false : (unitValue !== originalParsed.unit)}
           disabled={shouldDisable}
           layout="left"
           labelClassName="w-20"
