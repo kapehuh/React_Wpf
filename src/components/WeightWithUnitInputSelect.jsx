@@ -92,7 +92,7 @@ const WeightWithUnit = ({ value, originalValue, onChange, onValidation, error })
           numeric={true}
           isChanged={numberValue !== originalParsed.number}
           disabled={shouldDisable}
-          inputClassName="w-35"
+          inputClassName="w-37"
           placeholder={shouldDisable ? 'не задан' : 'Значение'}
         />
       </div>

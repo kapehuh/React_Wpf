@@ -38,9 +38,10 @@ const LabelInput = ({
 
 
   const isMissingPlaceholder = blockOnEmpty && (value === '' || value === null);
-  // Определяем, является ли значение "отсутствующим" (только для числового режима)
-  const isMissing = (blockOnEmpty && (value === '' || value === null)) || (numeric && (value === -1 || value === '-1'));
-  const finalPlaceholder = isMissingPlaceholder ? '— Не задано —' : (isMissing && numeric) ? '— Не задано —' : placeholder;
+  //const isMissing = (blockOnEmpty && (value === '' || value === null)) || (numeric && (value === -1 || value === '-1'));
+  const isMissing = (blockOnEmpty && (value === '' || value === null) && (originalValue === '' || originalValue == null))
+                  || (numeric && (value === -1 || value === '-1'));
+  const finalPlaceholder = isMissing ? '— Не задано —' : placeholder;
 
 
 
@@ -119,7 +120,7 @@ const LabelInput = ({
     border rounded px-2 py-1 text-sm
     focus:outline-none focus:ring-1 focus:ring-blue-500
     ${isChanged && !isMissing ? 'border-yellow-500 bg-yellow-50' : 'border-gray-300'}
-    ${disabled || isMissing ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}
+    ${disabled || isMissing ? 'bg-gray-100 cursor-default' : 'bg-white'}
     ${!disabled && !isMissing ? 'hover:border-blue-500' : ''}
   `;
 
@@ -152,7 +153,7 @@ const LabelInput = ({
   ) : null;
   // Обёртка с relative для позиционирования ошибки
   const wrappedInput = (
-    <div className="relative inline-block">
+    <div className={`relative ${layout === 'top' ? 'block w-full' : 'inline-block'}`}>
       {inputElement}
       {errorTooltip}
     </div>

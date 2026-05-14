@@ -10,6 +10,7 @@ import WeightWithUnit from './components/WeightWithUnitInputSelect';
 import LabelInputButton from './components/LabelInputButton';
 import { sendToWPF } from './actions/SendMsgByHostObjects';
 import { validateName } from './actions/validationUtils';
+import { formatCreateDate } from './actions/formatUtils';
 import { fieldConfigs  } from './config/fieldConfigs';
 import { editableFields } from './config/editableFields';
 import { useFieldSelect } from './hooks/hookFieldSelect';
@@ -250,7 +251,7 @@ function App() {
                 ? (Number(currentElement.zPos) / 1000).toLocaleString() + ' м'
                 : '—'
             }
-            title="мировая Z-координата нижней точки CWBRAN"
+            title="Z-координата по SITE нижней точки CWBRAN"
           />
         </div>
         <div className="-ml-23 mt-3 col-start-2 row-start-2">
@@ -267,7 +268,7 @@ function App() {
               error={fieldErrors.cwJusLine}
             />
           </div>
-          <div className="mt-1">
+          <div className="mt-1 hidden">
             <LabelSelect
               label={rPathYdirField.label}
               value={rPathYdirField.value}
@@ -278,38 +279,38 @@ function App() {
               disabled={rPathYdirField.disabled}
               inputClassName="w-40"
               error={fieldErrors.cwRpathYdir}
-
+            />
+          </div>
+          <div className="mt-1 whitespace-nowrap">
+            <LabelSelect
+              label={cwDDIRField.label}
+              value={cwDDIRField.value}
+              options={cwDDIRField.options}
+              onChange={cwDDIRField.onChange}
+              layout={cwDDIRField.layout}
+              isChanged={cwDDIRField.isChanged}
+              disabled={cwDDIRField.disabled}
+              inputClassName="w-40"
+              error={fieldErrors.cwDDIR}
             />
           </div>
         </div>
-        <div className="mt-1 -ml-2 col-start-1 row-start-3">
+        <div className="mt-1 -ml-3 -mr-3 col-span-2 row-start-3">
           <LabelInput
             label="Название разреза"
             value={editedElement.cwDNAM}
             originalValue={currentElement.cwDNAM}
             onChange={(val) => handleFieldChange('cwDNAM', val)}
             layout="top"
-            //blockOnEmpty={true}
+            blockOnEmpty={true}
             isChanged={editedElement.cwDNAM !== currentElement.cwDNAM}
-            inputClassName="w-62"
-            placeholder="Разрез"
+            inputClassName="w-full min-w-[450]"
+            placeholder="Название разреза, узла"
             error={fieldErrors.cwDNAM}
           />
         </div>
-        <div className="mt-1 ml-15 col-start-2 row-start-3 whitespace-nowrap">
-          <LabelSelect
-            label={cwDDIRField.label}
-            value={cwDDIRField.value}
-            options={cwDDIRField.options}
-            onChange={cwDDIRField.onChange}
-            layout={cwDDIRField.layout}
-            isChanged={cwDDIRField.isChanged}
-            disabled={cwDDIRField.disabled}
-            inputClassName="w-40"
-            error={fieldErrors.cwDDIR}
-          />
-        </div>
-        <div className="-ml-2 -mt-5 col-span-2 row-start-4 whitespace-nowrap">
+        
+        <div className="-ml-1 -mt-7 col-span-2 row-start-4 whitespace-nowrap">
           <WeightWithUnit
             value={editedElement.cwLoad}
             originalValue={currentElement.cwLoad}
@@ -319,7 +320,7 @@ function App() {
           />
         </div>
       </div>
-      <div className='flex -mt-17 ml-0 w-full'>
+      <div className='flex -mt-21 ml-0 w-full'>
         <FileSelector
           label="Ссылка на файл разреза"
           value={editedElement.cwDrawingPath}
@@ -334,7 +335,7 @@ function App() {
         />
       </div>
       <div className="mt-1 p-2 border border-gray-300 rounded bg-gray-50 min-w-[400px] flex">
-        <LabelValue label="Создан:" value={currentElement?.createDate ?? '—'} />
+        <LabelValue label="Создан:" value={formatCreateDate(currentElement?.createDate) ?? '—'} />
       </div>
       <div className="flex justify-end gap-3 mt-3 pt-1 pb-2 mr-0">
         {/* Тост для общих ошибок */}

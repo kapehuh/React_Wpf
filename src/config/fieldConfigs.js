@@ -16,7 +16,7 @@ export const fieldConfigs = {
     label: 'Направление',
     getOptions: (value, originalValue) => getDirectionOptions(value, originalValue),
     isDisabled: (originalValue) => !isDirectionPresent(originalValue),
-    layout: 'top',
+    layout: 'left',
   },
   jusLine: {
     // Горизонтально
