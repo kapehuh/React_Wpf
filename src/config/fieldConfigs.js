@@ -29,6 +29,6 @@ export const fieldConfigs = {
     label: 'Форма',
     getOptions: (value, originalValue) => getVShapeOptions(value, originalValue),
     isDisabled: (originalValue) => !isVShapeAttributePresent(originalValue),
-    layout: 'top',
+    layout: 'left',
   },
 };

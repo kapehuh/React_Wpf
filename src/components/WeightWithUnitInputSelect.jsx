@@ -73,7 +73,7 @@ const WeightWithUnit = ({ value, originalValue, onChange, onValidation, error })
 
   return (
     <div className="relative grid grid-cols-2 gap-1">
-      <div className='flex ml-2 pr-1'>
+      <div className='flex ml-2'>
         <LabelInput
           label="Нагрузка"
           value={numberValue}
@@ -96,7 +96,7 @@ const WeightWithUnit = ({ value, originalValue, onChange, onValidation, error })
           placeholder={shouldDisable ? 'не задан' : 'Значение'}
         />
       </div>
-      <div className='flex ml-14'>
+      <div className='flex ml-20 mt-1 justify-end'>
         <LabelSelect
           label="Ед. изм."
           value={shouldDisable ? '' : unitValue}
@@ -116,7 +116,7 @@ const WeightWithUnit = ({ value, originalValue, onChange, onValidation, error })
           disabled={shouldDisable}
           layout="left"
           labelClassName="w-20"
-          inputClassName="w-19"
+          inputClassName="w-25"
         />
       </div>
       {errorTooltip}

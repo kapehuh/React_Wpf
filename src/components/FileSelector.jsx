@@ -43,7 +43,7 @@ const FileSelector = ({
   };
 
   const baseInputClasses = `
-    border rounded px-2 py-1 text-sm w-103
+    border rounded px-2 py-1 text-sm w-100
     ${isChanged && !isMissing ? 'border-yellow-500 bg-yellow-50' : 'border-gray-300'}
     ${isDisabled ? 'bg-gray-100 cursor-default' : 'bg-white cursor-pointer hover:bg-blue-50 hover:text-blue-600'}
     ${!isDisabled ? 'focus:outline-none focus:ring-1 focus:ring-blue-500' : 'focus:outline-none focus:ring-0'}
@@ -55,7 +55,7 @@ const FileSelector = ({
   `;
 
   return (
-    <div className={layout === 'top' ? 'mb-3 w-full' : 'flex items-center gap-3'}>
+    <div className={layout === 'top' ? 'mb-1 w-full' : 'flex items-center gap-3'}>
       <label className={`font-semibold text-gray-700 select-none ml-1 ${layout === 'top' ? 'block mb-1' : 'w-25'}`}>
         {label}:
       </label>

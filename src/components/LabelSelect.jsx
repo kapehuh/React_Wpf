@@ -65,14 +65,14 @@ const LabelSelect = ({
   if (layout === 'top') {
     return (
       <div className="mb-3">
-        <label className="w-45 ml-1 block font-semibold text-gray-700 mb-1 select-none">{label}:</label>
+        <label className="w-40 ml-1 block font-semibold text-gray-700 mb-1 select-none">{label}:</label>
         {wrappedSelect}
       </div>
     );
   }
   return (
-    <div className="flex items-center gap-3">
-      <label className={`font-semibold text-gray-700 select-none ${labelClassName || 'w-35'}`}>
+    <div className="flex items-center gap-1">
+      <label className={`font-semibold text-gray-700 select-none ${labelClassName || 'w-28'}`}>
         {label}:
       </label>
       {wrappedSelect}

@@ -11,7 +11,7 @@ import React from 'react';
 const TrackCE = ({ onTrackingChange, checked }) => {
   return (
     <div className="flex items-center gap-2" title="Включить/выключить отслеживание текущего элемента в E3D">
-      <label className="flex items-center cursor-pointer select-none gap-4">
+      <label className="flex items-center cursor-pointer select-none gap-2">
         <input
           type="checkbox"
           checked={checked}

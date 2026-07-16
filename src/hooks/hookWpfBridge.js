@@ -22,6 +22,7 @@ export const useWpfBridge = ({
         const parsed = typeof message === 'string' ? JSON.parse(message) : message;
 
         if (parsed.action === 'elementChanged' && parsed.payload) {
+          // console.log('📦 Данные из WPF:', parsed.payload);
           setCurrentElement(parsed.payload);
         }
 

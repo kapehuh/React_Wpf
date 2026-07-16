@@ -9,4 +9,5 @@ export const editableFields = [
   'cwDNAM',
   'cwLoad',
   'cwDrawingPath',
+  'cwHeig'
 ];

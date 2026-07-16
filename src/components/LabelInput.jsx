@@ -41,7 +41,7 @@ const LabelInput = ({
   //const isMissing = (blockOnEmpty && (value === '' || value === null)) || (numeric && (value === -1 || value === '-1'));
   const isMissing = (blockOnEmpty && (value === '' || value === null) && (originalValue === '' || originalValue == null))
                   || (numeric && (value === -1 || value === '-1'));
-  const finalPlaceholder = isMissing ? '— Не задано —' : placeholder;
+  const finalPlaceholder = isMissing ? '—' : placeholder;
 
 
 
@@ -167,15 +167,15 @@ const LabelInput = ({
   );
   // Метка сверху
   if (layout === 'top') return (
-    <div className="mb-3">
+    <div className="mb-2">
       <label className="block font-semibold text-gray-700 mb-1 select-none ml-1">{label}:</label>
       {wrappedInput}
     </div>
   );
   // Метка слева
   return (
-    <div className="flex items-center">
-      <label className="w-25 font-semibold text-gray-700 select-none">{label}:</label>
+    <div className="flex items-center gap-2">
+      <label className="w-20 font-semibold text-gray-700 select-none">{label}:</label>
       {wrappedInput}  
     </div>
   );
