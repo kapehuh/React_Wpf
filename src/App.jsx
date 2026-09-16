@@ -20,7 +20,8 @@ import { useFieldSelect } from './hooks/hookFieldSelect';
 import { useWpfBridge } from './hooks/hookWpfBridge';
 
 
-
+// 'unset' и '' семантически эквивалентны — оба означают «значения нет»
+const normalizeCwPath = (v) => (v === 'unset' ? '' : (v ?? ''));
 
 function App() {
   //debugger;
@@ -42,6 +43,7 @@ function App() {
   const [weightError, setWeightError] = useState(null);         // Ошибка нагрузка ?
   const [fieldErrors, setFieldErrors] = useState({});           // 
   const [genericError, setGenericError] = useState(null);       // 
+  const [infoMessage, setInfoMessage] = useState(null);
 
   const isWebView = !!window.chrome?.webview;
 
@@ -55,6 +57,7 @@ function App() {
     setWeightError,
     setFieldErrors,
     setGenericError,
+    setInfoMessage,
   });
 
   // use_EFFECT эффекты
@@ -83,12 +86,30 @@ function App() {
     const result = {};
     // перебор изменяемых полей из editableFields.js
     for (const key of editableFields) {
-      if (editedElement[key] !== currentElement[key]) {
+      if (key === 'cwDrawingPath') {
+        const edited = normalizeCwPath(editedElement[key]);
+        const current = normalizeCwPath(currentElement[key]);
+        if (edited !== current) result[key] = edited;
+      } else if (editedElement[key] !== currentElement[key]) {
         result[key] = editedElement[key];
       }
     }
     return result;
   }, [editedElement, currentElement]);
+
+
+  // Валидация ссылки на файл разреза
+  const pathError = useMemo(() => {
+    if (!editedElement || !currentElement) return null;
+    const path = normalizeCwPath(editedElement.cwDrawingPath);
+    const originalPath = normalizeCwPath(currentElement.cwDrawingPath);
+    if (path === originalPath) return null;
+    if (path === '') return null;
+    if (!/\.(dwg|dxf|pdf)$/i.test(path)) {
+      return 'Файл должен иметь расширение .dwg, .dxf или .pdf';
+    }
+    return null;
+  }, [editedElement?.cwDrawingPath, currentElement?.cwDrawingPath]);
 
 
   // use_CALLBACK обработчики
@@ -97,6 +118,23 @@ function App() {
     setTrackingEnabled(isEnabled);
     if (isWebView) sendToWPF('trackCe', { enabled: isEnabled });
   }, [isWebView]);
+
+
+  // Обработчики для файлов
+  const handleOpenFile = (path) => {
+    if (!path) return;
+    if (!/\.(dwg|dxf|pdf)$/i.test(path)) {
+      setGenericError('Файл должен иметь расширение .dwg, .dxf или .pdf');
+      return;
+    }
+    sendToWPF('openFile', { path });
+  };
+
+
+  const handleOpenFolder = (path) => {
+    if (!path) return;
+    sendToWPF('openFolder', { path });
+  };
 
 
   const handleFieldChange = useCallback((fieldKey, newValue) => {
@@ -131,9 +169,9 @@ function App() {
   // ===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===
   const handleSaveAll = useCallback(() => {
     if (Object.keys(changes).length === 0) return;
-    if (weightError) return; // дополнительная проверка
+    if (weightError || pathError) return; // дополнительная проверка
     sendToWPF('updateElement', { changes });
-  }, [changes, weightError]);
+  }, [changes, weightError, pathError]);
   // СБРОСИТЬ изменения
   // ===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===^===
   const handleCancel = useCallback(() => {
@@ -164,7 +202,7 @@ function App() {
   if (!currentElement || !editedElement) {
     return <div className="p-4">Загрузка данных элемента...</div>;
   }
-  const saveDisabled = Object.keys(changes).length === 0 || !isFormValid;
+  const saveDisabled = Object.keys(changes).length === 0 || !isFormValid || !!pathError;
   // состояние кнопки Rename: активно только при изменении и без ошибки имени
   const isRenameDisabled = !isNameChanged || !!nameError;
   const swapDisabled = editedElement?.vHeig === -1 || editedElement?.vHeig === '-1' || editedElement?.vWidth === -1 || editedElement?.vWidth === '-1';
@@ -355,12 +393,15 @@ function App() {
           value={editedElement.cwDrawingPath}
           originalValue={currentElement.cwDrawingPath}
           onChange={(val) => handleFieldChange('cwDrawingPath', val)}
-          blockOnEmpty={true}
-          isChanged={editedElement.cwDrawingPath !== currentElement.cwDrawingPath}
+          isChanged={normalizeCwPath(editedElement.cwDrawingPath) !== normalizeCwPath(currentElement.cwDrawingPath)}
           layout="top"
           placeholder="путь к файлу"
           inputClassName="w-full"
           onBrowse={() => requestFile(crypto.randomUUID())}
+          onOpenFile={handleOpenFile}
+          onOpenFolder={handleOpenFolder}
+          onError={setGenericError}
+          error={pathError}
         />
       </div>
       <div className="mt-1 p-2 border border-gray-300 rounded bg-gray-50 flex">
@@ -372,6 +413,7 @@ function App() {
       <div className="flex justify-end gap-3 mt-3 pt-1 pb-2 mr-0">
         {/* Тост для общих ошибок */}
         <Toast message={genericError} onClose={() => setGenericError(null)} />
+        <Toast message={infoMessage} onClose={() => setInfoMessage(null)} type="info" />
         <button onClick={handleCancel} className="px-4 py-1 border border-gray-300 rounded text-gray-700 hover:bg-gray-100">Отмена</button>
         <button
           onClick={handleSaveAll}

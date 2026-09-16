@@ -33,6 +33,8 @@ using Application = System.Windows.Application;
 using AvevaCmd = Aveva.Core.Utilities.CommandLine.Command;
 using CE = Aveva.Core.Database.CurrentElement;
 using WinForms = System.Windows.Forms;
+using System.DirectoryServices.AccountManagement;
+using System.DirectoryServices;
 
 namespace WpfReactTest1.View
 {
@@ -45,6 +47,7 @@ namespace WpfReactTest1.View
         public static DbQualifier world => new DbQualifier { wrtQualifier = MDB.CurrentMDB.GetFirstWorld(DbType.Design) };
         public DbElement CurElem { get; set; } = CE.Element;
 
+
         private ReactBridge _bridge;
         public MainWindow()
         {
@@ -54,6 +57,10 @@ namespace WpfReactTest1.View
                 InitializeComponent();
                 CurElem = CurrentElement.Element;
                 Loaded += Window_Loaded;
+
+                string projName = Project.CurrentProject.Name;
+                string mdbName = MDB.CurrentMDB.Name;
+                this.Title = $"{projName} | {mdbName} | CwbranEditor";
             }
             catch (Exception cstr)
             {
@@ -209,6 +216,13 @@ namespace WpfReactTest1.View
                         var filePath = payload.GetProperty("path").GetString();
                         HandleOpenFile(filePath);
                         break;
+                    case "openFolder":
+                        string folderPath = payload.GetProperty("path").GetString();
+                        HandleOpenFolder(folderPath);
+                        break;
+                    case "swapDimensions":
+                        SwapWidthHeig(CurElem);
+                        break;
                     case "updateElement":
                         var changes = payload.GetProperty("changes");
                         bool updateResult = true;
@@ -228,6 +242,7 @@ namespace WpfReactTest1.View
                                     try
                                     {
                                         string newName = value.GetString();
+                                        if (!string.IsNullOrEmpty(newName) && !newName.StartsWith("/")) newName = "/" + newName;
                                         CurElem.SetAttribute(DbAttributeInstance.NAME, newName);
                                         cmd.CommandString = "REFRESH";
                                         cmd.Run();
@@ -235,8 +250,6 @@ namespace WpfReactTest1.View
                                     catch (Exception e)
                                     {
                                         updateResult = false;
-                                        //errField = field;
-                                        //errMessage = e.Message;
                                         fieldErrors[field] = e.Message;
                                     }
                                     break;
@@ -381,6 +394,20 @@ namespace WpfReactTest1.View
                                         fieldErrors[field] = e.Message;
                                     }
                                     break;
+                                //ссылка на файл разреза
+                                case "cwHeig":
+                                    try
+                                    {
+                                        CurElem.SetAttribute(DbAttribute.GetDbAttribute(":cwHEIG"), value.GetString());
+                                        cmd.CommandString = "REFRESH";
+                                        cmd.Run();
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        updateResult = false;
+                                        fieldErrors[field] = e.Message;
+                                    }
+                                    break;
                                 default:
                                     break;
                             }
@@ -410,6 +437,7 @@ namespace WpfReactTest1.View
         
 
         private bool _isSubscribed = false;
+
         // Изменение подписки на CurrentElementChanged
         private void EditCurrentElementChangedSubscribe(bool trackCe)
         {
@@ -438,7 +466,6 @@ namespace WpfReactTest1.View
             }
         }
 
-
         // Событие смены текущего элемента / обработка
         private void CE_CurrentElementChanged(object sender, CurrentElementChangedEventArgs e)
         {
@@ -450,13 +477,29 @@ namespace WpfReactTest1.View
             SendToReact(json);
         }
 
-
         // Получение информации о элементе, вызовы: при старте реакта, при включении подписки, при смене элемента
         private object GetCurrentElementData(DbElement e)
         {
             DbElement siteElem = e.FindOwnerOfType("SITE");
             DbElement zoneElem = e.FindOwnerOfType("ZONE");
             DbElement szoneElem = e.FindOwnerOfType("ZONE", ":SZONE");
+            string userModified = string.Empty;
+            if (e.GetElementType().Equals(DbElementTypeInstance.WORLD))
+            {
+            }
+            else
+            {
+                e.GetValidAsString(DbAttributeInstance.USERM, ref userModified);
+            }
+            userModified = GetUserInfo(userModified);
+            string lastModified = string.Empty;
+            if (e.GetElementType().Equals(DbElementTypeInstance.WORLD))
+            {
+            }
+            else
+            {
+                e.GetValidAsString(DbAttributeInstance.LASTM, ref lastModified);
+            }
             double width = 0;
             if (e.GetValidDouble(DbAttributeInstance.VWIDT, ref width)) { }
             else
@@ -504,9 +547,23 @@ namespace WpfReactTest1.View
                 zmin = rpath.Members(DbElementTypeInstance.POINTR).Select(p => p.GetPosition(DbAttributeInstance.POS, dbqsite).Z).Min().ToString();
                 //zmin = rpath.Members(DbElementTypeInstance.POINTR).Aggregate((minP, p) => p.GetPosition(DbAttributeInstance.POS, world).Z < minP.GetPosition(DbAttributeInstance.POS, world).Z ? p : minP).ToString();
             }
+
+            string cwheig = string.Empty;
+            if (e.GetElementType().Equals(DbElementTypeInstance.CWBRAN))
+            {
+                e.GetValidAsString(DbAttribute.GetDbAttribute(":cwHEIG"), ref cwheig);
+            }
+            else
+            {
+                cwheig = "false";
+            }
+
+            string rawName = e.Name();
+            string displayName = rawName.StartsWith("/") ? rawName.Substring(1) : rawName; // возвращать в реакт имя без '/'
+
             var elemdata = new
             {
-                Name = e.Name(),                // имя
+                Name = displayName,             // имя
                 Ref = e.GetAsString(DbAttributeInstance.REF),    // ref   
                 Site = siteElem.Name(),         // site
                 Zone = zoneElem.Name(),         // zone
@@ -527,9 +584,15 @@ namespace WpfReactTest1.View
 
                 cwDrawingPath = cwdrawingpath,  // путь к файлу чертежа
                 createDate = createdate,        // дата создания
+
+                userModified = userModified,           // пользователь, сделавший последнее изменение
+                lastModified = lastModified,           // дата последнего изменения
+
+                cwHeig = cwheig
             };
             return elemdata ;
         }
+
 
         // Метод, который должен работать по умолчанию, но не работает, вместо него Bridge()
         //private void OnWebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
@@ -567,10 +630,12 @@ namespace WpfReactTest1.View
 
         // ==================================================================================== / открытие файла
 
+
         /// <summary>
         /// OpenFileDialog через c#, тк реакт не возвращает полный путь к файлу
         /// </summary>
         /// <param name="request_id">нужен для реакт чтобы сопоставить pendingRequests</param>
+        /// 
         private void SendFileNameToReact(string request_id)
         {
             string projName = Project.CurrentProject.Name;
@@ -604,6 +669,62 @@ namespace WpfReactTest1.View
             }
         }
 
+        private void SwapWidthHeig(DbElement e)
+        {
+            try
+            {
+                double vHeig = e.GetDouble(DbAttributeInstance.VHEIG);
+                double vWidt = e.GetDouble(DbAttributeInstance.VWIDT);
+
+                CurElem.SetAttribute(DbAttributeInstance.VHEIG, vWidt);
+                CurElem.SetAttribute(DbAttributeInstance.VWIDT, vHeig);
+
+                cmd.CommandString = "REFRESH";
+                cmd.Run();
+
+                // Отправляем обновлённый элемент обратно
+                var updatedElement = GetCurrentElementData(CurElem);
+                var response = new { action = "elementChanged", payload = updatedElement };
+                SendToReact(JsonSerializer.Serialize(response));
+            }
+            catch (Exception swapex)
+            {
+                SendErrorToReact($"Ошибка смены значений Width/Heig: {swapex.Message}");
+            }
+        }
+
+        private string GetUserInfo(string tableNumber)
+        {
+            try
+            {
+                if (tableNumber == string.Empty) return string.Empty;
+                PrincipalContext contextAD = new PrincipalContext(ContextType.Domain, "lgnh.spb");
+                UserPrincipal userAD = UserPrincipal.FindByIdentity(contextAD, tableNumber);
+                if (userAD != null)
+                {
+                    // userAD.Surname;
+                    // userAD.GivenName
+                    //DirectoryEntry directoryEntry = userAD.GetUnderlyingObject() as DirectoryEntry;
+                    //if (directoryEntry != null && directoryEntry.Properties.Contains("department"))
+                    //{
+                    //    object department = directoryEntry.Properties["department"].Value;
+                    //    if (department != null)
+                    //        string userOtdel = department.ToString();
+                    //}
+                    return userAD.DisplayName;
+                }
+            }
+            catch (Exception)
+            {
+                SendErrorToReact($"Невозможно вычислить last_user_modified");
+            }
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// открытие файла dwg
+        /// </summary>
+        /// <param name="filePath"></param>
         private void HandleOpenFile(string filePath)
         {
             try
@@ -642,15 +763,61 @@ namespace WpfReactTest1.View
             //SendErrorToReact("Файл не найден: " + filePath);
         }
 
+        private void HandleOpenFolder(string filePath)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(filePath))
+                {
+                    SendErrorToReact("Путь к файлу не указан.");
+                    return;
+                }
+
+                // 1. Файл существует — открываем папку с выделением файла
+                if (File.Exists(filePath))
+                {
+                    Process.Start("explorer.exe", $"/select, \"{filePath}\"");
+                    return;
+                }
+
+                // 2. Это папка — открываем её
+                if (Directory.Exists(filePath))
+                {
+                    Process.Start("explorer.exe", $"\"{filePath}\"");
+                    return;
+                }
+
+                // 3. Файл отсутствует, но родительская папка есть — открываем её
+                string parentDir = System.IO.Path.GetDirectoryName(filePath);
+                if (!string.IsNullOrEmpty(parentDir) && Directory.Exists(parentDir))
+                {
+                    Process.Start("explorer.exe", $"\"{parentDir}\"");
+                    SendInfoToReact($"Файл не найден. Открыта содержащая папка: {parentDir}");
+                    return;
+                }
+
+                SendErrorToReact($"Путь недоступен: {filePath}");
+
+                // Открываем папку и выделяем файл
+                // Process.Start("explorer.exe", $"/select, \"{filePath}\"");
+            }
+            catch (Exception ex)
+            {
+                SendErrorToReact($"Ошибка открытия: {ex.Message}");
+            }
+        }
+
         private void SendErrorToReact(string message)
         {
-            var response = new { 
-                action = "openFileError", 
-
-                message };
+            var response = new { action = "openFileError", message };
             SendToReact(JsonSerializer.Serialize(response));
         }
 
+        private void SendInfoToReact(string message)
+        {
+            var response = new { action = "infoMessage", message };
+            SendToReact(JsonSerializer.Serialize(response));
+        }
         // ==================================================================================== ***
 
 
@@ -724,8 +891,6 @@ namespace WpfReactTest1.View
             return null;
         }
     }
-
-
 
     /// <summary>
     /// Попытка обновить дерево ExplorerTree через c# с получением ExplorerCtrl

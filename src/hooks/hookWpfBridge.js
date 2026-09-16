@@ -11,6 +11,7 @@ export const useWpfBridge = ({
   setWeightError,
   setFieldErrors,
   setGenericError,
+  setInfoMessage,
 }) => {
   const pendingRequests = useRef(new Map());
   const fieldErrorsTimerRef = useRef(null); // таймер для сброса fieldErrors
@@ -55,8 +56,7 @@ export const useWpfBridge = ({
 
             // Показываем общий тост если нет полевых ошибок
             if (Object.keys(errors).length === 0) {
-              const genericMsg = parsed.message || 'Ошибка сохранения';
-              setGenericError(genericMsg);
+              setGenericError(parsed.message || 'Ошибка сохранения');
               // Тосты сами скрываются через Toast компонент (по таймеру)
             } else {
               setGenericError(null); // скрываем тост, если были полевые ошибки
@@ -76,6 +76,11 @@ export const useWpfBridge = ({
         if (parsed.action === 'openFileError') {
           setGenericError(parsed.message || 'Ошибка открытия файла');
           setFieldErrors({});
+        }
+
+        // информационные уведомления (например, «файл не найден, открыта папка»)
+        if (parsed.action === 'infoMessage') {
+          setInfoMessage(parsed.message || '');
         }
       } catch (e) {
         console.warn('Failed to parse message received from WPF', e);
