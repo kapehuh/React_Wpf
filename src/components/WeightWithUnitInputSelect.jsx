@@ -1,119 +1,127 @@
+// src/components/WeightWithUnitInputSelect.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import LabelInput from './LabelInput';
 import LabelSelect from './LabelSelect';
 import { getUnitOptions } from '../actions/unitUtils';
 
-
-const WeightWithUnit = ({ value, originalValue, onChange, disabled = false }) => {
-  // Парсим исходную строку
-  const parseWeight = (str) => {
-    if (!str || str === '') return { number: '', unit: '' };
-    const parts = str.trim().split(/\s+/);
-    if (parts.length === 1) {
-      // Если нет пробела – пробуем интерпретировать как число, единица пустая
-      const num = parts[0];
-      return { number: num, unit: '' };
-    }
-    const number = parts[0];
-    const unit = parts.slice(1).join(' ');
-    return { number, unit };
+const WeightWithUnit = ({ value, originalValue, onChange, onValidation, error }) => {
+  const parseWeight = (raw) => {
+    if (raw == null || raw === '') return { number: '', unit: '' };
+    if (typeof raw !== 'string') raw = String(raw);
+    const str = raw.trim();
+    if (str === '') return { number: '', unit: '' };
+    const parts = str.split(/\s+/);
+    if (parts.length === 1) return { number: parts[0], unit: '' };
+    return { number: parts[0], unit: parts.slice(1).join(' ') };
   };
+
+  const originalParsed = useMemo(() => parseWeight(originalValue), [originalValue]);
 
   const [numberValue, setNumberValue] = useState('');
   const [unitValue, setUnitValue] = useState('');
-  const [isMissing, setIsMissing] = useState(!value || value === '');
+  const [lastUnit, setLastUnit] = useState(''); // запоминаем последнюю непустую единицу
 
-  // Синхронизация с внешним value (когда приходит новый currentElement)
+  const isOriginalAbsent = !originalValue || originalValue === '';
+  const shouldDisable = isOriginalAbsent && (!value || value === '');
+
+  // Синхронизация при изменении внешнего value или originalValue
   useEffect(() => {
-    const missing = !value || value === '';
-    setIsMissing(missing);
-    if (missing) {
+    if (value == null || value === '') {
       setNumberValue('');
-      setUnitValue('');
+      if (isOriginalAbsent) {
+        // Элемент без атрибута: сбрасываем единицу полностью
+        setUnitValue('');
+        setLastUnit('');
+      }
+      // НЕ сбрасываем unitValue и lastUnit, чтобы единица сохранялась
     } else {
       const { number, unit } = parseWeight(value);
       setNumberValue(number);
-      setUnitValue(unit);
+      if (unit !== '') {
+        setUnitValue(unit);
+        setLastUnit(unit);
+      } else {
+        // Если value пришло без единицы, считаем, что её сознательно убрали
+        setUnitValue('');
+        setLastUnit('');
+      }
     }
   }, [value]);
 
-  // Флаг изменений (для подсветки)
+  // Валидация: ошибка только если изменилось и число некорректно
+  useEffect(() => {
+    if (value == null || value === '') {
+      onValidation?.(null);
+      return;
+    }
+    const parsed = parseWeight(value);
+    if (parsed.number === originalParsed.number && parsed.unit === originalParsed.unit) {
+      onValidation?.(null);
+      return;
+    }
+    const valid = numberValue.trim() !== '' && !isNaN(Number(numberValue));
+    onValidation?.(!valid ? 'Введите число' : null);
+  }, [numberValue, unitValue, value, originalParsed, onValidation]);
+
   const isChanged = value !== originalValue;
 
-  // Обработчик изменения числа
-  const handleNumberChange = (newNumber) => {
-    const newWeight = newNumber && unitValue ? `${newNumber} ${unitValue}` : (newNumber || '');
-    onChange(newWeight);
-  };
-
-  // Обработчик изменения единицы
-  const handleUnitChange = (newUnit) => {
-    const newWeight = numberValue && newUnit ? `${numberValue} ${newUnit}` : (numberValue || '');
-    onChange(newWeight);
-  };
-
-  // Если атрибут отсутствует (пустая строка) – блокируем оба поля
-  if (isMissing) {
-    return (
-      <div className="grid grid-cols-2 gap-1">
-        <div className='flex ml-2 pr-1'>
-          <LabelInput
-            label="Вес"
-            value=""
-            onChange={() => {}}
-            disabled={true}
-            placeholder="не задан"
-            layout="left"
-            inputClassName="w-35"
-          />
-        </div>
-        <div className='flex ml-14'>
-          <LabelSelect
-            label="Ед. изм."
-            value=""
-            options={[]}
-            onChange={() => {}}
-            disabled={true}
-            layout="left"
-            labelClassName="w-20"
-            inputClassName="w-19"
-          />
-        </div>
-      </div>
-    );
-  }
+  const errorTooltip = error ? (
+    <div className="absolute left-0 top-full mt-1 z-20 bg-red-600 text-white text-xs rounded px-2 py-1 whitespace-nowrap shadow-lg">
+      {error}
+    </div>
+  ) : null;
 
   return (
-    <div className="grid grid-cols-2 gap-1">
-      <div className='flex ml-2 pr-1'>
+    <div className="relative grid grid-cols-2 gap-1">
+      <div className='flex ml-2'>
         <LabelInput
           label="Нагрузка"
           value={numberValue}
-          originalValue={parseWeight(originalValue).number}
-          onChange={handleNumberChange}
+          originalValue={originalParsed.number}
+          onChange={(newNumber) => {
+            const numStr = (newNumber == null || newNumber === '') ? '' : String(newNumber);
+            if (numStr === '') {
+              // Полная очистка, единица не передаётся, но остаётся в интерфейсе
+              onChange('');
+            } else {
+              // Используем текущую единицу, а если она пуста — последнюю известную
+              const effectiveUnit = unitValue || lastUnit;
+              onChange(effectiveUnit ? `${numStr} ${effectiveUnit}` : numStr);
+            }
+          }}
           numeric={true}
-          isChanged={numberValue !== parseWeight(originalValue).number}
-          inputClassName="w-35"
-          placeholder="число"
+          isChanged={numberValue !== originalParsed.number}
+          disabled={shouldDisable}
+          inputClassName="w-37"
+          placeholder={shouldDisable ? 'не задан' : 'Значение'}
         />
       </div>
-      <div className='flex ml-14'>
+      <div className='flex ml-20 mt-1 justify-end'>
         <LabelSelect
           label="Ед. изм."
-          value={unitValue}
-          options={getUnitOptions(unitValue)}
-          onChange={handleUnitChange}
-          isChanged={unitValue !== parseWeight(originalValue).unit}
-          disabled={false}
+          value={shouldDisable ? '' : unitValue}
+          options={shouldDisable ? [] : getUnitOptions(unitValue)}
+          onChange={(newUnit) => {
+            const numStr = (numberValue == null || numberValue === '') ? '' : String(numberValue);
+            setUnitValue(newUnit);
+            setLastUnit(newUnit);
+            if (numStr === '') {
+              // Без числа значение не меняем, но единица запомнена
+              onChange('');
+            } else {
+              onChange(`${numStr} ${newUnit}`);
+            }
+          }}
+          isChanged={shouldDisable ? false : (unitValue !== originalParsed.unit)}
+          disabled={shouldDisable}
           layout="left"
           labelClassName="w-20"
-          inputClassName="w-19"
-        />  
+          inputClassName="w-25"
+        />
       </div>
+      {errorTooltip}
     </div>
   );
 };
-
-
 
 export default WeightWithUnit;

@@ -24,55 +24,61 @@ const LabelSelect = ({
   disabled = false,
   labelClassName = '',
   inputClassName = '',
+  error,
 }) => {
   const selectClasses = `
     border rounded px-2 py-1 text-sm
     focus:outline-none focus:ring-1 focus:ring-blue-500
     ${isChanged ? 'border-yellow-500 bg-yellow-50' : 'border-gray-300'}
-    ${disabled ? 'bg-gray-100 cursor-default opacity-70' : 'bg-white'}
+    ${disabled ? 'bg-gray-100 cursor-default opacity-70' : 'bg-white hover:border-blue-500'}
   `;
 
-  // layout === 'top'
+
+
+  const selectElement = (
+    <select
+      value={value ?? ''}
+      onChange={(e) => onChange(e.target.value)}
+      disabled={disabled}
+      className={`${selectClasses} ${inputClassName}`.trim()}
+    >
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
+  );
+  const errorTooltip = error ? (
+    <div className="absolute left-0 top-full mt-1 z-20 bg-red-600 text-white text-xs rounded px-2 py-1 whitespace-nowrap shadow-lg">
+      {error}
+    </div>
+  ) : null;
+  const wrappedSelect = (
+    <div className="relative inline-block">
+      {selectElement}
+      {errorTooltip}
+    </div>
+  );
+
+
   if (layout === 'top') {
     return (
       <div className="mb-3">
-        <label className="w-45 ml-1 block font-semibold text-gray-700 mb-1 select-none">{label}:</label>
-        <select
-          value={value ?? ''}
-          onChange={(e) => onChange(e.target.value)}
-          disabled={disabled}
-          className={`${selectClasses} ${inputClassName}`.trim()}
-        >
-          {options.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+        <label className="w-40 ml-1 block font-semibold text-gray-700 mb-1 select-none">{label}:</label>
+        {wrappedSelect}
       </div>
     );
   }
-
-  // layout === 'left' (по умолчанию)
   return (
-    <div className="flex items-center gap-3">
-      <label className={`font-semibold text-gray-700 select-none ${labelClassName || 'w-35'}`}>
+    <div className="flex items-center gap-1">
+      <label className={`font-semibold text-gray-700 select-none ${labelClassName || 'w-28'}`}>
         {label}:
       </label>
-      <select
-        value={value ?? ''}
-        onChange={(e) => onChange(e.target.value)}
-        disabled={disabled}
-        className={`${selectClasses} ${inputClassName}`.trim()}
-      >
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
+      {wrappedSelect}
     </div>
   );
 };
+
 
 export default LabelSelect;

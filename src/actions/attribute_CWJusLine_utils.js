@@ -1,6 +1,6 @@
 // src/actions/attribute_CWJusLine_utils.js
 
-// Проверяет, есть ли атрибут (не пустая строка) – можно использовать ту же логику, что для cwDDIR
+// Проверяет, есть ли атрибут (не пустая строка)
 export const isJusLineAttributePresent = (value) => value != null && value !== '';
 
 // Возвращает опции для комбобокса, добавляя произвольное значение, если пришло неизвестное
@@ -18,7 +18,7 @@ export const getJusLineOptions = (currentValue, originalValue) => {
     { value: 'TOPL', label: 'top-left' },
     { value: 'TOPR', label: 'top-right' },
   ];
-  if (originalValue === '') {
+  if (originalValue == null || originalValue === '') {
     return [predefinedOptions[0]];
   }
   const options = predefinedOptions.filter(opt => opt.value !== '');
